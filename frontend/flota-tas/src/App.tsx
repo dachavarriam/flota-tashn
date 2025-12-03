@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import './App.css';
+import logoTas from './assets/LogoTAS_circular.png';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -23,7 +24,9 @@ function App() {
     <div className="page">
       <div className="card">
         <div className="brand">
-          <div className="logo-placeholder">TAS</div>
+          <div className="logo-wrapper">
+            <img src={logoTas} alt="TAS" className="logo-img" />
+          </div>
           <div>
             <p className="eyebrow">Demo flota</p>
             <h1>Sistema de asignación</h1>
@@ -75,9 +78,7 @@ function App() {
           </div>
         )}
         <p className="hint">
-          Para agregar el logo de TAS, coloca el archivo en
-          <code>src/assets/logo-tas.png</code> y úsalo en el bloque de marca, o
-          comparte un enlace y lo integramos.
+          Si necesitas ajustar otro logo o enlace, compártelo y lo actualizamos.
         </p>
       </div>
     </div>

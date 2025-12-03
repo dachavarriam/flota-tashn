@@ -15,3 +15,4 @@
 - chore: configured PrismaClient with @prisma/adapter-pg + pg pool and updated seed to use adapter
 - chore: ran `prisma migrate dev --name init` and seeded admin on local DB
 - chore: added typings for pg/bcrypt and fixed TS strict issues in DTOs/auth/prisma
+- feat: frontend login usa logo TAS (LogoTAS_circular.png) en el header
