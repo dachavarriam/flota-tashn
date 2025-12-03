@@ -14,3 +14,4 @@
 - feat: frontend login demo with axios client, AuthProvider, and env example for API URL
 - chore: configured PrismaClient with @prisma/adapter-pg + pg pool and updated seed to use adapter
 - chore: ran `prisma migrate dev --name init` and seeded admin on local DB
+- chore: added typings for pg/bcrypt and fixed TS strict issues in DTOs/auth/prisma

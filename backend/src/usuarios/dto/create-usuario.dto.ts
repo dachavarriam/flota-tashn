@@ -11,17 +11,17 @@ import {
 export class CreateUsuarioDto {
   @IsString()
   @MinLength(2)
-  nombre: string;
+  nombre!: string;
 
   @IsEmail()
-  correo: string;
+  correo!: string;
 
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @IsEnum(Rol)
-  rol: Rol;
+  rol!: Rol;
 
   @IsOptional()
   @IsBoolean()
