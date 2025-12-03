@@ -1,7 +1,7 @@
 🚗 Proyecto: flota-tashonduras — Sistema de Asignación y Control de Flota Vehicular
 
 Estado: Desarrollo inicial
-Propósito: Crear un sistema digital para la gestión completa de asignaciones vehiculares, inspecciones, historial, mantenimiento y alertas, accesible desde móvil y escritorio, integrado con Postgres, n8n y Slack, con backend NestJS 11 y frontend React 19.
+Propósito: Crear un sistema digital para la gestión completa de asignaciones, inspecciones, historial, mantenimiento y alertas, accesible desde móvil y escritorio, integrado con Postgres, n8n y Slack, con backend NestJS 11 y frontend React 19.
 
 ⸻
 
@@ -11,86 +11,55 @@ Frontend (React 19 + Vite + TailwindCSS 4)
      ↕ REST API
 Backend (NestJS 11 + Prisma ORM)
      ↕
-PostgreSQL 16 (Servidor local)
+PostgreSQL 16
      ↕
-n8n (Slack notifications + PDF workflows + Odoo sync)
+n8n (Slack notifications + PDF/alert workflows)
 
-Infraestructura expuesta vía Cloudflare Tunnel en
-https://flota.tashonduras.com
+Infra: docker-compose (api:4000, postgres:5432, opcional pgadmin), futuro Cloudflare Tunnel.
 
 ⸻
 
 🎯 Módulos principales
 
 1. Autenticación
-	•	Login simple: correo + contraseña
-	•	JWT (Acceso con roles)
-	•	Roles soportados:
-	•	USUARIO (empleado)
-	•	ENCARGADO (quien asigna vehículos)
-	•	SUPERVISOR (RRHH/Admin)
-	•	ADMIN (Gerencia)
-
-⸻
+   • Login: correo + contraseña
+   • JWT con roles (USUARIO, ENCARGADO, SUPERVISOR, ADMIN)
 
 2. Vehículos
-	•	Registro de vehículos
-	•	Placa, marca, modelo, tipo
-	•	KM actual
-	•	Último mantenimiento
-	•	Historial
-
-⸻
+   • Registro/edición, placa, marca, modelo, tipo
+   • KM actual, último mantenimiento, historial
 
 3. Asignaciones
-	•	Vehículo → Conductor → Encargado
-	•	Checklists
-	•	Niveles: combustible, aceite, coolant
-	•	Fotos (rallones, abolladuras, interior, exterior)
-	•	Firmas (conductor, encargado)
-	•	Observaciones
-	•	Generación de PDF
-	•	Envío a Slack
-	•	Registro de historial
-
-⸻
+   • Vehículo → Conductor → Encargado
+   • Checklist, niveles (combustible/aceite/coolant)
+   • Fotos (rallones, abolladuras, interior, exterior)
+   • Firmas (conductor, encargado)
+   • Observaciones, PDF, envío a Slack, historial
 
 4. Mantenimientos
-	•	Registro de mantenimientos
-	•	Fecha, descripción, costo
-	•	Próximo mantenimiento por KM
-	•	Alertas automáticas vía n8n
-
-⸻
+   • Fecha, descripción, costo
+   • Próximo mantenimiento por KM
+   • Alertas automáticas vía n8n
 
 5. Alertas
-	•	Daños
-	•	Niveles bajos
-	•	Mantenimientos vencidos
-	•	Faltas de herramientas
-	•	Envío automático a Slack
-
-⸻
+   • Daños, niveles bajos, mantenimientos vencidos, faltas de herramientas
+   • Envío automático a Slack
 
 6. Dashboard Web
-	•	Vista general de vehículos
-	•	Estado de cada vehículo
-	•	Historial por vehículo
-	•	Reportes por encargado
-	•	Filtros por fecha / usuario / vehículo
-	•	Actividades recientes
+   • Estado de flota, historial por vehículo, reportes por encargado
+   • Filtros por fecha/usuario/vehículo, actividades recientes
 
 ⸻
 
-📐 Base de Datos (Prisma 6.x) — Esquema Compacto
+📐 Base de Datos (Prisma)
 
 model Usuario {
-  id       Int    @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   nombre   String
-  correo   String @unique
+  correo   String   @unique
   password String
   rol      Rol
-  activo   Boolean @default(true)
+  activo   Boolean  @default(true)
   asignacionesAsignadas Asignacion[] @relation("EncargadoAsignaciones")
   asignacionesRecibidas Asignacion[] @relation("UsuarioAsignaciones")
 }
@@ -103,58 +72,54 @@ enum Rol {
 }
 
 model Vehiculo {
-  id                       Int @id @default(autoincrement())
-  placa                    String @unique
+  id                       Int      @id @default(autoincrement())
+  placa                    String   @unique
   marca                    String?
   modelo                   String?
   tipo                     String?
-  kmActual                 Int @default(0)
-  kmUltimoMantenimiento    Int @default(0)
+  kmActual                 Int      @default(0)
+  kmUltimoMantenimiento    Int      @default(0)
   fechaUltimoMantenimiento DateTime?
   asignaciones             Asignacion[]
 }
 
 model Asignacion {
-  id            Int @id @default(autoincrement())
-  vehiculoId    Int
-  usuarioId     Int
-  encargadoId   Int
-  fecha         DateTime @default(now())
-  horaSalida    String?
-  kmSalida      Int?
-  uso           String?
-  checklist     Json?
-  niveles       Json?
-  observaciones String?
-  pdfUrl        String?
-  firmaUsuario  String?
+  id             Int      @id @default(autoincrement())
+  vehiculoId     Int
+  usuarioId      Int
+  encargadoId    Int
+  fecha          DateTime @default(now())
+  horaSalida     String?
+  kmSalida       Int?
+  uso            String?
+  checklist      Json?
+  niveles        Json?
+  observaciones  String?
+  pdfUrl         String?
+  firmaUsuario   String?
   firmaEncargado String?
-  fotos         FotoAsignacion[]
+  fotos          FotoAsignacion[]
+
+  vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id])
+  usuario     Usuario  @relation("UsuarioAsignaciones", fields: [usuarioId], references: [id])
+  encargado   Usuario  @relation("EncargadoAsignaciones", fields: [encargadoId], references: [id])
 }
 
 model FotoAsignacion {
-  id           Int @id @default(autoincrement())
+  id           Int    @id @default(autoincrement())
   asignacionId Int
   tipo         String
   url          String
+  asignacion   Asignacion @relation(fields: [asignacionId], references: [id])
 }
-
 
 ⸻
 
 🧩 Backend (NestJS 11)
 
-Dependencias principales:
-	•	@nestjs/core 11.x
-	•	@nestjs/jwt
-	•	@nestjs/passport
-	•	prisma + @prisma/client
-	•	bcrypt
-	•	class-validator
-	•	class-transformer
+Dependencias principales: @nestjs/core/common/platform-express, @nestjs/jwt, @nestjs/passport, passport-jwt, bcrypt, class-validator, class-transformer, prisma + @prisma/client.
 
-Estructura:
-
+Estructura target (sin subcarpeta api):
 backend/
  ├ src/
  │   ├ auth/
@@ -166,21 +131,19 @@ backend/
  │   ├ prisma/
  │   └ common/
  ├ prisma/
+ ├ package.json
  └ Dockerfile
-
 
 ⸻
 
 🖥 Frontend (React 19 + Vite 6 + TailwindCSS 4)
 
 Funcionalidad:
-	•	Login simple
-	•	Home por rol
-	•	Formulario de asignación (mobile-first)
-	•	Carga de fotos (File API)
-	•	Firmas (signature pad)
-	•	Dashboard (solo supervisor y admin)
-	•	Fetch API con Axios
+ • Login + rutas protegidas por rol
+ • Home por rol
+ • Formulario de asignación (mobile-first): niveles, checklist, fotos, firmas, observaciones
+ • Dashboard (supervisor/admin)
+ • Axios client + estado con Context/Zustand
 
 ⸻
 
@@ -188,7 +151,7 @@ Funcionalidad:
 
 services:
   api:
-    build: ../backend
+    build: ./backend
     ports: ["4000:4000"]
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/flota
@@ -207,29 +170,26 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@tas.hn
       PGADMIN_DEFAULT_PASSWORD: admin123
 
-
 ⸻
 
 💬 Integración con n8n
-
-Usos:
-	•	Enviar PDF a Slack
-	•	Crear alertas automáticas
-	•	Sincronizar empleados desde Odoo
-	•	Recordatorios de mantenimiento
-	•	Generar reportes de cambios
+ • Enviar PDF/alertas a Slack
+ • Crear alertas automáticas
+ • Sincronizar empleados desde Odoo
+ • Recordatorios de mantenimiento
+ • Generar reportes de cambios
 
 ⸻
 
 🚀 Qué sigue (Codex puede generar):
-	1.	Generar NestJS 11 modules + controllers
-	2.	Implementar Auth (JWT)
-	3.	Implementar Roles Guard
-	4.	Implementar CRUD Usuarios, Vehículos, Asignaciones
-	5.	Generar frontend base
-	6.	Conectar frontend ↔ backend
-	7.	Integrar PDF
-	8.	Integrar Slack vía n8n
-	9.	Crear dashboard
+ 1. Limpieza repo + .gitignore raíz
+ 2. NestJS 11 base en backend/ sin subcarpeta api
+ 3. Prisma schema + migración inicial + seed admin
+ 4. Auth (JWT + roles + guards)
+ 5. CRUD Usuarios, Vehículos, Asignaciones (con fotos), Mantenimientos, Alertas
+ 6. Integración n8n (Slack/PDF)
+ 7. Frontend base + login + rutas protegidas
+ 8. Formulario de asignación + dashboard
+ 9. Docker compose/api/frontend
 
 ⸻
