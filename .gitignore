@@ -1,0 +1,95 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+
+# ==========================
+# GENERALES PARA NODE/NPM
+# ==========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# ==========================
+# LOGS
+# ==========================
+logs/
+*.log
+*.log.*
+/backend/logs
+/frontend/logs
+
+# ==========================
+# BUILD OUTPUT
+# ==========================
+dist/
+build/
+out/
+.next/
+.cache/
+.vite/
+.vite-cache/
+vite-dist/
+
+# ==========================
+# EDITOR / SISTEMA
+# ==========================
+.DS_Store
+*.swp
+*.swo
+*.tmp
+*.bak
+*.temp
+
+# ==========================
+# ENV FILES (SENSIBLES)
+# ==========================
+.env
+.env.*
+backend/.env
+frontend/.env
+
+# ==========================
+# PRISMA
+# ==========================
+/backend/prisma/migrations/
+
+# ==========================
+# DOCKER / TEMPORAL
+# ==========================
+docker-data/
+docker-volumes/
+**/pgdata/
+postgres-data/
+*.pid
+*.seed
+*.db
+
+# ==========================
+# COVERAGE / TEST
+# ==========================
+coverage/
+.nyc_output/
+.vscode-test/
+
+# ==========================
+# IDE
+# ==========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.iml
+
+# ==========================
+# FRAGMENTOS
+# ==========================
+*.tsbuildinfo
