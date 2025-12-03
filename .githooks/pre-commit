@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+changed="$(git diff --cached --name-only)"
+
+if [ -z "$changed" ]; then
+  exit 0
+fi
+
+# Require changelog entry for code/infrastructure changes
+if echo "$changed" | grep -Ev '^(changelog\.md|docs/|README|compact\.md|\.gitignore|\.githooks/)' >/dev/null; then
+  if ! echo "$changed" | grep -q '^changelog\.md$'; then
+    echo "[pre-commit] Falta entrada en changelog.md para los cambios realizados."
+    exit 1
+  fi
+fi
+
+exit 0

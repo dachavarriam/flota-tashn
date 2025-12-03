@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+
+run_if_present() {
+  local label="$1"
+  local path="$2"
+  local script="$3"
+
+  if [ ! -f "$path/package.json" ]; then
+    return
+  fi
+
+  if [ ! -d "$path/node_modules" ]; then
+    echo "[pre-push] ${label}: node_modules ausente, se omite npm run ${script}"
+    return
+  fi
+
+  echo "[pre-push] ${label}: ejecutando npm run ${script}"
+  (cd "$path" && npm run "${script}" --if-present)
+}
+
+run_if_present "backend" "${ROOT_DIR}/backend" "lint"
+run_if_present "backend" "${ROOT_DIR}/backend" "test"
+run_if_present "frontend" "${ROOT_DIR}/frontend/flota-tas" "lint"
+run_if_present "frontend" "${ROOT_DIR}/frontend/flota-tas" "test"
