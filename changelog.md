@@ -8,3 +8,7 @@
 - chore: set core.hooksPath to .githooks for local enforcement
 - feat: scaffolded NestJS 11 backend structure in backend/ with modules placeholders and prisma service
 - chore: added backend configs (tsconfig, nest-cli, eslint) and env example
+- feat: wired JWT auth (email/password) with Prisma + bcrypt, login/me endpoints, guards/decorators
+- chore: added Prisma config for v7, generate script, and seed script for admin user
+- feat: basic usuarios endpoints (create/list) with role guard; jwt strategy added
+- feat: frontend login demo with axios client, AuthProvider, and env example for API URL
