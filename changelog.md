@@ -11,6 +11,7 @@
 - feat: seeded database with 7 real TAS Honduras vehicles (HBP4760, HBP4761, HDL2845, HBO3747, JAK6227, HBO3748, HDL3848)
 - test: created comprehensive CRUD test script for vehiculos endpoints
 - chore: changed backend port to 4001 for testing
+- fix: enabled CORS for frontend with credentials support
 
 ### Frontend
 
@@ -21,6 +22,9 @@
 - feat: updated App.tsx with navbar and navigation after login
 - chore: added auth token interceptor to API client
 - feat: created TypeScript types for Vehiculo entity
+- fix: changed TypeScript imports to type-only imports for interfaces in AuthContext
+- chore: updated API URL in .env to use server IP for network access
+- test: verified complete CRUD functionality (create, read, update, delete, search)
 
 ## 2024-12-03
 

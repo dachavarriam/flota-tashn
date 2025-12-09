@@ -6,7 +6,8 @@ import {
   useState
 } from 'react';
 import { api } from '../api/client';
-import { LoginPayload, LoginResponse, Usuario, login } from '../api/auth';
+import type { LoginPayload, LoginResponse, Usuario } from '../api/auth';
+import { login } from '../api/auth';
 
 interface AuthContextValue {
   user: Usuario | null;
