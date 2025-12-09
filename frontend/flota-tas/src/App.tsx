@@ -1,7 +1,9 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import './App.css';
 import logoTas from './assets/LogoTAS_circular.png';
 import { useAuth } from './context/AuthContext';
+import { VehiculosPage } from './pages/VehiculosPage';
 
 function App() {
   const { user, login, logout, loading, error } = useAuth();
@@ -20,6 +22,33 @@ function App() {
     }
   };
 
+  // If logged in, show Vehiculos page
+  if (user) {
+    return (
+      <div className="app-container">
+        <nav className="navbar">
+          <div className="navbar-content">
+            <div className="navbar-brand">
+              <img src={logoTas} alt="TAS" className="navbar-logo" />
+              <span className="navbar-title">Sistema Flota TAS</span>
+            </div>
+            <div className="navbar-user">
+              <span className="user-name">{user.nombre}</span>
+              <span className="user-role">({user.rol})</span>
+              <button className="btn-logout" onClick={logout}>
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </nav>
+        <main className="main-content">
+          <VehiculosPage />
+        </main>
+      </div>
+    );
+  }
+
+  // If not logged in, show login form
   return (
     <div className="page">
       <div className="card">
@@ -33,52 +62,36 @@ function App() {
           </div>
         </div>
 
-        {!user ? (
-          <form className="form" onSubmit={handleSubmit}>
-            <label>
-              Correo
-              <input
-                type="email"
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                placeholder="usuario@tas.hn"
-                required
-              />
-            </label>
-            <label>
-              Contraseña
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </label>
-            {error && <div className="alert error">{error}</div>}
-            {info && <div className="alert success">{info}</div>}
-            <button type="submit" disabled={loading}>
-              {loading ? 'Ingresando...' : 'Ingresar'}
-            </button>
-          </form>
-        ) : (
-          <div className="session">
-            <div>
-              <p className="eyebrow">Sesión activa</p>
-              <h2>{user.nombre}</h2>
-              <p className="muted">
-                {user.correo} · Rol: <strong>{user.rol}</strong>
-              </p>
-            </div>
-            <div className="session-actions">
-              <button type="button" className="secondary" onClick={logout}>
-                Cerrar sesión
-              </button>
-            </div>
-          </div>
-        )}
+        <form className="form" onSubmit={handleSubmit}>
+          <label>
+            Correo
+            <input
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              placeholder="usuario@tas.hn"
+              required
+            />
+          </label>
+          <label>
+            Contraseña
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </label>
+          {error && <div className="alert error">{error}</div>}
+          {info && <div className="alert success">{info}</div>}
+          <button type="submit" disabled={loading}>
+            {loading ? 'Ingresando...' : 'Ingresar'}
+          </button>
+        </form>
+
         <p className="hint">
-          Si necesitas ajustar otro logo o enlace, compártelo y lo actualizamos.
+          Usuario por defecto: admin@tas.hn / admin123
         </p>
       </div>
     </div>

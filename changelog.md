@@ -2,6 +2,8 @@
 
 ## 2024-12-09
 
+### Backend
+
 - feat: implemented complete CRUD for vehiculos module (DTOs, service, controller, guards)
 - feat: added validation for unique placa and conflict prevention on delete with asignaciones
 - chore: fixed Prisma adapter connection using individual env vars (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD)
@@ -9,6 +11,16 @@
 - feat: seeded database with 7 real TAS Honduras vehicles (HBP4760, HBP4761, HDL2845, HBO3747, JAK6227, HBO3748, HDL3848)
 - test: created comprehensive CRUD test script for vehiculos endpoints
 - chore: changed backend port to 4001 for testing
+
+### Frontend
+
+- feat: implemented complete CRUD UI for vehiculos (list, create, edit, delete)
+- feat: added VehiculosList component with search and table display
+- feat: added VehiculoForm component for create/edit with validation
+- feat: added VehiculosPage to manage list and form views
+- feat: updated App.tsx with navbar and navigation after login
+- chore: added auth token interceptor to API client
+- feat: created TypeScript types for Vehiculo entity
 
 ## 2024-12-03
 
