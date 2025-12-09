@@ -6,9 +6,16 @@ import { Pool } from 'pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL
-    });
+    // Use individual env vars to avoid parsing issues with DATABASE_URL
+    const poolConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME || 'flota',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres'
+    };
+
+    const pool = new Pool(poolConfig);
     const adapter = new PrismaPg(pool);
     super({ adapter });
   }

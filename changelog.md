@@ -1,6 +1,17 @@
 # Changelog
 
+## 2024-12-09
+
+- feat: implemented complete CRUD for vehiculos module (DTOs, service, controller, guards)
+- feat: added validation for unique placa and conflict prevention on delete with asignaciones
+- chore: fixed Prisma adapter connection using individual env vars (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD)
+- chore: added dotenv config to main.ts for proper environment variable loading
+- feat: seeded database with 7 real TAS Honduras vehicles (HBP4760, HBP4761, HDL2845, HBO3747, JAK6227, HBO3748, HDL3848)
+- test: created comprehensive CRUD test script for vehiculos endpoints
+- chore: changed backend port to 4001 for testing
+
 ## 2024-12-03
+
 - chore: added root .gitignore to unify ignores and prep clean repo
 - chore: removed legacy nested backend/api scaffold to rebuild backend at backend/
 - docs: updated compact.md with current scope, schema, and roadmap
