@@ -29,6 +29,7 @@ enum Rol {
   ENCARGADO
   SUPERVISOR
   ADMIN
+  SUPERUSER
 }
 
 model Vehiculo {
@@ -41,28 +42,38 @@ model Vehiculo {
   kmUltimoMantenimiento    Int      @default(0)
   fechaUltimoMantenimiento DateTime?
   asignaciones             Asignacion[]
+  mantenimientos           Mantenimiento[]
 }
 
 model Asignacion {
-  id            Int      @id @default(autoincrement())
-  vehiculoId    Int
-  usuarioId     Int
-  encargadoId   Int
-  fecha         DateTime @default(now())
-  horaSalida    String?
-  kmSalida      Int?
-  uso           String?
-  checklist     Json?
-  niveles       Json?
-  observaciones String?
-  pdfUrl        String?
-  firmaUsuario  String?
+  id             Int      @id @default(autoincrement())
+  vehiculoId     Int
+  usuarioId      Int
+  encargadoId    Int
+  fecha          DateTime @default(now())
+  horaSalida     String?
+  horaRetorno    String?
+  kmSalida       Int?
+  kmRetorno      Int?
+  uso            String?
+  estado         EstadoAsignacion @default(ACTIVA)
+  checklist      Json?
+  niveles        Json?
+  observaciones  String?
+  pdfUrl         String?
+  firmaUsuario   String?
   firmaEncargado String?
 
   vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id])
   usuario     Usuario  @relation("UsuarioAsignaciones", fields: [usuarioId], references: [id])
   encargado   Usuario  @relation("EncargadoAsignaciones", fields: [encargadoId], references: [id])
   fotos       FotoAsignacion[]
+}
+
+enum EstadoAsignacion {
+  ACTIVA
+  FINALIZADA
+  CANCELADA
 }
 
 model FotoAsignacion {
@@ -72,4 +83,18 @@ model FotoAsignacion {
   url          String
 
   asignacion Asignacion @relation(fields: [asignacionId], references: [id])
+}
+
+model Mantenimiento {
+  id                   Int      @id @default(autoincrement())
+  vehiculoId           Int
+  fecha                DateTime @default(now())
+  tipo                 String
+  descripcion          String
+  costo                Float?
+  kmActual             Int
+  proximoMantenimiento Int?
+  observaciones        String?
+
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id])
 }

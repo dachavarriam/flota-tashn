@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -39,5 +44,65 @@ export class UsuariosService {
       throw new NotFoundException('Usuario no encontrado');
     }
     return this.sanitize(user);
+  }
+
+  async update(id: number, dto: UpdateUsuarioDto) {
+    const existing = await this.prisma.usuario.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Check email uniqueness if being updated
+    if (dto.correo && dto.correo !== existing.correo) {
+      const emailExists = await this.prisma.usuario.findUnique({
+        where: { correo: dto.correo }
+      });
+      if (emailExists) {
+        throw new ConflictException('El correo ya está en uso');
+      }
+    }
+
+    const data: any = { ...dto };
+
+    // Hash password if provided
+    if (dto.password) {
+      data.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    const updated = await this.prisma.usuario.update({
+      where: { id },
+      data
+    });
+
+    return this.sanitize(updated);
+  }
+
+  async remove(id: number) {
+    const existing = await this.prisma.usuario.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Check if user has asignaciones
+    const asignacionesRecibidas = await this.prisma.asignacion.count({
+      where: { usuarioId: id }
+    });
+
+    const asignacionesAsignadas = await this.prisma.asignacion.count({
+      where: { encargadoId: id }
+    });
+
+    if (asignacionesRecibidas > 0 || asignacionesAsignadas > 0) {
+      // Deactivate instead of delete
+      const deactivated = await this.prisma.usuario.update({
+        where: { id },
+        data: { activo: false }
+      });
+      return this.sanitize(deactivated);
+    }
+
+    // Safe to delete if no asignaciones
+    const deleted = await this.prisma.usuario.delete({ where: { id } });
+    return this.sanitize(deleted);
   }
 }

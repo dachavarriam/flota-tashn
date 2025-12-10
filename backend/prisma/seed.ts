@@ -16,29 +16,81 @@ const adapter = new PrismaPg(new Pool(poolConfig));
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Seed usuario admin
-  const adminEmail = 'admin@tas.hn';
-  const adminPassword = 'admin123'; // cambiar en producción
+  // Seed usuarios reales de TAS Honduras
+  const defaultPassword = 'TAS2024'; // Contraseña por defecto, cambiar en primer login
 
-  const existing = await prisma.usuario.findUnique({
-    where: { correo: adminEmail }
-  });
+  const usuarios = [
+    {
+      nombre: 'Daniel Antonio Chavarria Medina',
+      correo: 'dchavarria@tas-seguridad.com',
+      rol: Rol.ADMIN
+    },
+    {
+      nombre: 'Jose Arturo Chavarria Medina',
+      correo: 'jchavarriam@tas-seguridad.com',
+      rol: Rol.ADMIN
+    },
+    {
+      nombre: 'Kenya Alexandra Hernandez Chiquillo',
+      correo: 'contahns@tas-seguridad.com',
+      rol: Rol.SUPERVISOR
+    },
+    {
+      nombre: 'Josselyn Vanessa Viera Membreño',
+      correo: 'jviera@tashonduras.com',
+      rol: Rol.SUPERVISOR
+    },
+    {
+      nombre: 'Irvin Adalberto Jimenez Fuentes',
+      correo: 'ijimenez@tashonduras.com',
+      rol: Rol.USUARIO
+    },
+    {
+      nombre: 'Emilio Javier Zuniga Corrales',
+      correo: 'ezuniga@ejemplo.com',
+      rol: Rol.USUARIO
+    },
+    {
+      nombre: 'Denis Francisco Guerrero Portillo',
+      correo: 'dguerrero@ejemplo.com',
+      rol: Rol.USUARIO
+    },
+    {
+      nombre: 'Elder Nahum Lopez Mejia',
+      correo: 'elopez@ejemplo.com',
+      rol: Rol.USUARIO
+    },
+    {
+      nombre: 'Dalton Israel Reyes Rodriguez',
+      correo: 'dreyes@tashonduras.com',
+      rol: Rol.ENCARGADO
+    },
+    {
+      nombre: 'Eduardo Arturo Villatoro Rivera',
+      correo: 'evillatoro@tashonduras.com',
+      rol: Rol.ENCARGADO
+    }
+  ];
 
-  if (!existing) {
-    const hashed = await bcrypt.hash(adminPassword, 10);
-    await prisma.usuario.create({
-      data: {
-        nombre: 'Admin',
-        correo: adminEmail,
-        password: hashed,
-        rol: Rol.ADMIN
-      }
+  for (const userData of usuarios) {
+    const existing = await prisma.usuario.findUnique({
+      where: { correo: userData.correo }
     });
-    // eslint-disable-next-line no-console
-    console.log(`✓ Usuario admin creado (${adminEmail}/${adminPassword})`);
-  } else {
-    // eslint-disable-next-line no-console
-    console.log('✓ Usuario admin ya existe');
+
+    if (!existing) {
+      const hashed = await bcrypt.hash(defaultPassword, 10);
+      await prisma.usuario.create({
+        data: {
+          ...userData,
+          password: hashed
+        }
+      });
+      // eslint-disable-next-line no-console
+      console.log(`✓ Usuario creado: ${userData.nombre} (${userData.correo}) - Rol: ${userData.rol}`);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(`✓ Usuario ya existe: ${userData.correo}`);
+    }
   }
 
   // Seed vehículos de TAS Honduras
