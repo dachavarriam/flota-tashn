@@ -2,6 +2,31 @@
 
 ## 2024-12-09
 
+### Modified by Gemini (UI/UX Overhaul & Features)
+
+#### Frontend - UI/UX Redesign
+- feat: implemented **Floating Dock Navigation** replacing traditional navbar
+- feat: redesigned **VehiculosList** with modern "Weather Card" style and responsive grid
+- feat: redesigned **UsuariosList** and **AsignacionesList** with iOS-style cards and quick filters
+- feat: implemented "Burger" style header for **AsignacionForm** with overlapping card effect
+- feat: improved form controls: Horizontal Fuel Slider with dynamic colors, Cyclic Fluid Buttons, and Toggle Switches for checklist
+- style: unified "Add" buttons to floating circular action buttons
+- style: implemented containerized layout (`main-viewport`) for better responsiveness on all devices
+
+#### Frontend - New Features
+- feat: integrated **Signature Capture** using `react-signature-canvas` in a full-screen modal
+- feat: added support for dynamic vehicle images based on license plate (`/public/vehiculos/[PLACA].png`)
+- feat: added context-aware action dock (Cancel/Sign) when inside forms
+- refactor: streamlined CSS for consistency across all modules
+
+#### Backend
+- feat: implemented complete CRUD for **Asignaciones** module (DTOs, Service, Controller, Guards)
+- feat: implemented complete CRUD for **Usuarios** module (finalized logic and DTOs)
+- feat: added `test-asignaciones.sh` script for automated API testing of assignments
+- chore: installed `@nestjs/mapped-types` to support PartialType in DTOs
+- chore: updated `CreateAsignacionDto` and `UpdateAsignacionDto` to fix class duplications and strict initialization
+- fix: removed `SUPERUSER` role from controller decorators to align with requirements
+
 ### Backend
 
 - feat: implemented complete CRUD for vehiculos module (DTOs, service, controller, guards)

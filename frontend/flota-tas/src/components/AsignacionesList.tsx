@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { asignacionesApi } from '../api/asignaciones';
 import { EstadoAsignacion } from '../types/asignacion';
 import type { Asignacion } from '../types/asignacion';
+import { Plus, Calendar, User, Truck, ChevronRight } from 'lucide-react';
 import './AsignacionesList.css';
 
 interface AsignacionesListProps {
@@ -9,10 +10,12 @@ interface AsignacionesListProps {
   onCreate?: () => void;
 }
 
+const FILTERS = ['Todas', 'Activas', 'Finalizadas'];
+
 export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState('Todas');
 
   useEffect(() => {
     loadAsignaciones();
@@ -21,114 +24,97 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
   const loadAsignaciones = async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await asignacionesApi.getAll();
       setAsignaciones(data);
     } catch (err) {
-      setError('Error al cargar asignaciones');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('¿Eliminar esta asignación?')) return;
+  const filteredAsignaciones = asignaciones.filter(a => {
+      if (activeFilter === 'Todas') return true;
+      if (activeFilter === 'Activas') return a.estado === EstadoAsignacion.ACTIVA;
+      if (activeFilter === 'Finalizadas') return a.estado === EstadoAsignacion.FINALIZADA;
+      return true;
+  });
 
-    try {
-      await asignacionesApi.delete(id);
-      setAsignaciones(asignaciones.filter((a) => a.id !== id));
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Error al eliminar';
-      alert(msg);
-    }
+  const getStatusColor = (estado: EstadoAsignacion) => {
+      switch (estado) {
+          case EstadoAsignacion.ACTIVA: return 'status-blue';
+          case EstadoAsignacion.FINALIZADA: return 'status-green';
+          default: return 'status-gray';
+      }
   };
 
-  const getStatusClass = (estado: EstadoAsignacion) => {
-    switch (estado) {
-      case EstadoAsignacion.ACTIVA: return 'status-activa';
-      case EstadoAsignacion.FINALIZADA: return 'status-finalizada';
-      case EstadoAsignacion.CANCELADA: return 'status-cancelada';
-      default: return '';
-    }
-  };
-
-  if (loading) return <div className="loading">Cargando asignaciones...</div>;
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <p className="error">{error}</p>
-        <button onClick={loadAsignaciones}>Reintentar</button>
-      </div>
-    );
-  }
+  if (loading) return <div className="loading-spinner">Cargando asignaciones...</div>;
 
   return (
-    <div className="asignaciones-list">
-      <div className="list-header">
-        <h2>Asignaciones</h2>
-        {onCreate && (
-          <button className="btn-primary" onClick={onCreate}>
-            + Nueva Asignación
-          </button>
-        )}
+    <div className="asignaciones-container">
+      
+      {/* Header */}
+      <div className="list-header-modern">
+          <h2 className="page-title">Asignaciones</h2>
+          {onCreate && (
+              <button className="btn-add-modern" onClick={onCreate}>
+                  <Plus size={24} />
+              </button>
+          )}
       </div>
 
-      {asignaciones.length === 0 ? (
-        <p className="empty-state">No hay asignaciones registradas</p>
-      ) : (
-        <div className="table-container">
-          <table className="asignaciones-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Vehículo</th>
-                <th>Conductor</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {asignaciones.map((asignacion) => (
-                <tr key={asignacion.id}>
-                  <td>#{asignacion.id}</td>
-                  <td>
-                    <strong>{asignacion.vehiculo?.placa || 'N/A'}</strong>
-                    <br />
-                    <small>{asignacion.vehiculo?.marca} {asignacion.vehiculo?.modelo}</small>
-                  </td>
-                  <td>{asignacion.usuario?.nombre || 'N/A'}</td>
-                  <td>{new Date(asignacion.fecha).toLocaleDateString()}</td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(asignacion.estado)}`}>
-                      {asignacion.estado}
-                    </span>
-                  </td>
-                  <td className="actions">
-                    {onEdit && (
-                      <button
-                        className="btn-edit"
-                        onClick={() => onEdit(asignacion)}
-                      >
-                        {asignacion.estado === EstadoAsignacion.ACTIVA ? 'Finalizar/Editar' : 'Ver/Editar'}
-                      </button>
-                    )}
-                    <button
-                      className="btn-delete"
-                      onClick={() => handleDelete(asignacion.id)}
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <p className="count">Mostrando {asignaciones.length} asignaciones</p>
+      {/* Filters */}
+      <div className="filters-scroll">
+          {FILTERS.map(filter => (
+              <button 
+                  key={filter}
+                  className={`filter-chip ${activeFilter === filter ? 'active' : ''}`}
+                  onClick={() => setActiveFilter(filter)}
+              >
+                  {filter}
+              </button>
+          ))}
+      </div>
+
+      {/* List */}
+      <div className="asignaciones-list-modern">
+          {filteredAsignaciones.map((asignacion) => (
+              <div 
+                key={asignacion.id} 
+                className="asignacion-card"
+                onClick={() => onEdit?.(asignacion)}
+              >
+                  <div className="card-top">
+                      <span className={`status-badge ${getStatusColor(asignacion.estado)}`}>
+                          {asignacion.estado}
+                      </span>
+                      <span className="card-date">
+                          {new Date(asignacion.fecha).toLocaleDateString()}
+                      </span>
+                  </div>
+                  
+                  <div className="card-main">
+                      <div className="info-row">
+                          <Truck size={16} className="info-icon" />
+                          <span className="info-text bold">
+                              {asignacion.vehiculo?.placa} 
+                              <span className="model-text"> • {asignacion.vehiculo?.modelo}</span>
+                          </span>
+                      </div>
+                      <div className="info-row">
+                          <User size={16} className="info-icon" />
+                          <span className="info-text">{asignacion.usuario?.nombre}</span>
+                      </div>
+                  </div>
+
+                  <div className="card-arrow">
+                      <ChevronRight size={20} />
+                  </div>
+              </div>
+          ))}
+      </div>
+
+      {filteredAsignaciones.length === 0 && <p className="empty-msg">No hay asignaciones</p>}
     </div>
   );
 }
