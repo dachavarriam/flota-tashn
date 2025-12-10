@@ -4,14 +4,15 @@ import './App.css';
 import logoTas from './assets/LogoTAS_circular.png';
 import { useAuth } from './context/AuthContext';
 import { VehiculosPage } from './pages/VehiculosPage';
-import { UsuariosPage } from './pages/UsuariosPage'; // Import UsuariosPage
+import { UsuariosPage } from './pages/UsuariosPage';
+import { AsignacionesPage } from './pages/AsignacionesPage'; // Import AsignacionesPage
 
 function App() {
   const { user, login, logout, loading, error } = useAuth();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [info, setInfo] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<'vehiculos' | 'usuarios'>('vehiculos'); // New state for page management
+  const [currentPage, setCurrentPage] = useState<'vehiculos' | 'usuarios' | 'asignaciones'>('vehiculos'); // Update state type
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -34,12 +35,18 @@ function App() {
               <img src={logoTas} alt="TAS" className="navbar-logo" />
               <span className="navbar-title">Sistema Flota TAS</span>
             </div>
-            <div className="navbar-links"> {/* New div for navigation links */}
+            <div className="navbar-links">
               <button
                 className={`nav-link ${currentPage === 'vehiculos' ? 'active' : ''}`}
                 onClick={() => setCurrentPage('vehiculos')}
               >
                 Vehículos
+              </button>
+              <button
+                className={`nav-link ${currentPage === 'asignaciones' ? 'active' : ''}`}
+                onClick={() => setCurrentPage('asignaciones')}
+              >
+                Asignaciones
               </button>
               <button
                 className={`nav-link ${currentPage === 'usuarios' ? 'active' : ''}`}
@@ -60,6 +67,7 @@ function App() {
         <main className="main-content">
           {currentPage === 'vehiculos' && <VehiculosPage />}
           {currentPage === 'usuarios' && <UsuariosPage />}
+          {currentPage === 'asignaciones' && <AsignacionesPage />}
         </main>
       </div>
     );
