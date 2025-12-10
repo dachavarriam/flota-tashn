@@ -4,12 +4,14 @@ import './App.css';
 import logoTas from './assets/LogoTAS_circular.png';
 import { useAuth } from './context/AuthContext';
 import { VehiculosPage } from './pages/VehiculosPage';
+import { UsuariosPage } from './pages/UsuariosPage'; // Import UsuariosPage
 
 function App() {
   const { user, login, logout, loading, error } = useAuth();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [info, setInfo] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<'vehiculos' | 'usuarios'>('vehiculos'); // New state for page management
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,20 @@ function App() {
               <img src={logoTas} alt="TAS" className="navbar-logo" />
               <span className="navbar-title">Sistema Flota TAS</span>
             </div>
+            <div className="navbar-links"> {/* New div for navigation links */}
+              <button
+                className={`nav-link ${currentPage === 'vehiculos' ? 'active' : ''}`}
+                onClick={() => setCurrentPage('vehiculos')}
+              >
+                Vehículos
+              </button>
+              <button
+                className={`nav-link ${currentPage === 'usuarios' ? 'active' : ''}`}
+                onClick={() => setCurrentPage('usuarios')}
+              >
+                Usuarios
+              </button>
+            </div>
             <div className="navbar-user">
               <span className="user-name">{user.nombre}</span>
               <span className="user-role">({user.rol})</span>
@@ -42,7 +58,8 @@ function App() {
           </div>
         </nav>
         <main className="main-content">
-          <VehiculosPage />
+          {currentPage === 'vehiculos' && <VehiculosPage />}
+          {currentPage === 'usuarios' && <UsuariosPage />}
         </main>
       </div>
     );
