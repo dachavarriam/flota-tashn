@@ -7,6 +7,27 @@ import { UpdateAsignacionDto } from './dto/update-asignacion.dto';
 export class AsignacionesService {
   constructor(private prisma: PrismaService) {}
 
+  private async generateNumeroRegistro(): Promise<string> {
+    // Get the last asignacion with a numeroRegistro
+    const lastAsignacion = await this.prisma.asignacion.findFirst({
+      where: { numeroRegistro: { not: null } },
+      orderBy: { numeroRegistro: 'desc' },
+      select: { numeroRegistro: true }
+    });
+
+    let nextNumber = 1;
+    if (lastAsignacion?.numeroRegistro) {
+      // Extract number from TFL-0001 format
+      const match = lastAsignacion.numeroRegistro.match(/TFL-(\d+)/);
+      if (match) {
+        nextNumber = parseInt(match[1]) + 1;
+      }
+    }
+
+    // Format as TFL-0001, TFL-0002, etc.
+    return `TFL-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
   async create(createAsignacionDto: CreateAsignacionDto) {
     const { vehiculoId, usuarioId, encargadoId, fotos, ...data } = createAsignacionDto;
 
@@ -20,10 +41,16 @@ export class AsignacionesService {
     const encargado = await this.prisma.usuario.findUnique({ where: { id: encargadoId } });
     if (!encargado) throw new NotFoundException(`Encargado con ID ${encargadoId} no encontrado`);
 
+    // Note: numeroRegistro is generated when signature is uploaded (in update method)
+    // Never generate it here in create, as signature is uploaded separately
+    const numeroRegistro = null;
+
     // Create assignment
+    // Note: estado defaults to ACTIVA in the schema, but will be set when signature is added
     return this.prisma.asignacion.create({
       data: {
         ...data,
+        numeroRegistro,
         vehiculoId,
         usuarioId,
         encargadoId,
@@ -72,25 +99,43 @@ export class AsignacionesService {
   }
 
   async update(id: number, updateAsignacionDto: UpdateAsignacionDto) {
-    await this.findOne(id); // Verify existence
+    const existing = await this.findOne(id); // Verify existence
 
     const { fotos, ...data } = updateAsignacionDto;
 
-    // Logic for updating photos could be complex (add/remove), 
-    // for now we only support adding new ones via update if "fotos" is passed, 
-    // or we ignore it. Let's assume we ignore "fotos" in update for simplicity 
-    // unless we specifically want to replace them. 
-    // A better approach for photos is separate endpoints or specific logic.
-    // For now, I'll strip 'fotos' from update to avoid issues, 
-    // as UpdateAsignacionDto extends Create which has it.
+    // Generate numeroRegistro if firmaUsuario is being added and doesn't exist yet
+    let numeroRegistro = existing.numeroRegistro;
+    if (data.firmaUsuario && !existing.numeroRegistro) {
+      numeroRegistro = await this.generateNumeroRegistro();
+      console.log(`📝 Generated numero registro: ${numeroRegistro} for asignacion #${id}`);
+    }
+
+    // Automatic estado flow:
+    // - When kmRetorno is provided (vehicle returned), auto-transition to EN_REVISION
+    // - FINALIZADA and CANCELADA must be set manually
+    let estadoFinal = data.estado;
+
+    // Auto-transition to EN_REVISION when kmRetorno is provided for first time on ACTIVA
+    if (data.kmRetorno !== undefined && !existing.kmRetorno && existing.estado === 'ACTIVA') {
+      estadoFinal = 'EN_REVISION' as any;
+      console.log(`🔄 Auto-transition: Asignacion #${id} ${existing.estado} → EN_REVISION (kmRetorno provided)`);
+    }
+    // If estado is explicitly set to FINALIZADA or CANCELADA, respect that
+    else if (data.estado === 'FINALIZADA' || data.estado === 'CANCELADA') {
+      estadoFinal = data.estado;
+      console.log(`✅ Manual transition: Asignacion #${id} ${existing.estado} → ${estadoFinal}`);
+    }
+    // Otherwise keep existing estado if not explicitly changed
+    else if (!data.estado) {
+      estadoFinal = existing.estado as any;
+    }
 
     return this.prisma.asignacion.update({
       where: { id },
       data: {
         ...data,
-        // If we want to add photos during update, we would use:
-        // fotos: fotos ? { create: fotos... } : undefined
-        // But usually updates to assignments are status/checklist updates.
+        numeroRegistro: numeroRegistro || undefined,
+        estado: estadoFinal,
       },
       include: {
         vehiculo: true,

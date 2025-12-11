@@ -27,11 +27,13 @@ export function AsignacionesPage({ setDockActions }: AsignacionesPageProps) {
   };
 
   const handleSuccess = () => {
-    setView('list');
-    setSelectedAsignacion(null);
     setRefreshKey((prev) => prev + 1);
-    // Reset dock when leaving form
-    setDockActions?.(null);
+    setView('list');
+    // Delay clearing selected asignacion to prevent form unmount during save
+    setTimeout(() => {
+      setSelectedAsignacion(null);
+      setDockActions?.(null);
+    }, 100);
   };
 
   const handleCancel = () => {

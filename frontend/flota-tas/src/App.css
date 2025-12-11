@@ -16,17 +16,24 @@
 
 /* HEADER */
 .app-header {
-    width: 100%;
-    max-width: 1000px;
+    width: calc(100% - 2rem);
+    max-width: 800px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
     position: sticky;
-    top: 0;
+    top: 1rem;
     z-index: 50;
-    background: transparent;
+    background: #f2f4f8;
+    border-radius: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     transition: opacity 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+@media (min-width: 1024px) {
+    .app-header { max-width: 1100px; }
 }
 
 .app-header.hidden-header {
@@ -134,13 +141,30 @@
     flex: 2;
 }
 
-/* Danger (Cancel) - FORCED WHITE / RED */
-.dock-action-btn.danger {
-    background-color: white !important;
+/* Danger (Cancel) - WHITE BACKGROUND / RED TEXT - FORCED */
+.floating-dock .dock-action-btn.danger,
+.floating-dock.actions-mode .dock-action-btn.danger,
+button.dock-action-btn.danger {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #ef4444 !important;
     border: 2px solid #ef4444 !important;
-    flex: 1;
-    box-shadow: none !important; /* Ensure no blue shadow */
+    flex: 1 !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15) !important;
+}
+
+.floating-dock .dock-action-btn.danger:hover,
+.floating-dock.actions-mode .dock-action-btn.danger:hover,
+button.dock-action-btn.danger:hover {
+    background: #fef2f2 !important;
+    background-color: #fef2f2 !important;
+}
+
+.floating-dock .dock-action-btn.danger:active,
+.floating-dock.actions-mode .dock-action-btn.danger:active,
+button.dock-action-btn.danger:active {
+    background: #fee2e2 !important;
+    background-color: #fee2e2 !important;
 }
 
 /* LOGIN STYLES (Unchanged) */

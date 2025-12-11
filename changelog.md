@@ -17,7 +17,15 @@
 - feat: integrated **Signature Capture** using `react-signature-canvas` in a full-screen modal
 - feat: added support for dynamic vehicle images based on license plate (`/public/vehiculos/[PLACA].png`)
 - feat: added context-aware action dock (Cancel/Sign) when inside forms
+- feat: implemented signature upload to server (converts base64 to File and uploads)
+- feat: added helper functions for base64 to File conversion in AsignacionForm
 - refactor: streamlined CSS for consistency across all modules
+
+#### Frontend - UI/UX Improvements
+- fix: header now has rounded corners and matches background color (#f2f4f8)
+- fix: header width now matches content width for consistent layout
+- fix: Cancel button in dock now displays white background with red text (forced with !important)
+- style: header is now sticky with proper spacing (top: 1rem, border-radius: 24px)
 
 #### Backend
 - feat: implemented complete CRUD for **Asignaciones** module (DTOs, Service, Controller, Guards)
@@ -26,6 +34,10 @@
 - chore: installed `@nestjs/mapped-types` to support PartialType in DTOs
 - chore: updated `CreateAsignacionDto` and `UpdateAsignacionDto` to fix class duplications and strict initialization
 - fix: removed `SUPERUSER` role from controller decorators to align with requirements
+- feat: implemented file upload system with multer for photos and signatures
+- feat: added AsignacionesUploadController with endpoints for signature and photo uploads
+- feat: configured static file serving for /uploads directory
+- chore: created upload directories (uploads/signatures and uploads/photos)
 
 ### Backend
 

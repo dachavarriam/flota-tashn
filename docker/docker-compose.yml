@@ -1,0 +1,50 @@
+services:
+  api:
+    container_name: flota-api
+    build: ../backend
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/flota
+      REDIS_URL: redis://redis:6379
+      PORT: 4000
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    container_name: flota-postgres
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: flota
+    ports:
+      - "5433:5432"
+    volumes:
+      - flota_pg_data:/var/lib/postgresql/data
+
+  pgadmin:
+    container_name: flota-pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@tas.hn
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis:7
+    container_name: flota-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  flota_pg_data:

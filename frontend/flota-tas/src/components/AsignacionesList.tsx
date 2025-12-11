@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { asignacionesApi } from '../api/asignaciones';
 import { EstadoAsignacion } from '../types/asignacion';
 import type { Asignacion } from '../types/asignacion';
-import { Plus, Calendar, User, Truck, ChevronRight } from 'lucide-react';
+import { Plus, User, Truck, ChevronRight, AlertTriangle } from 'lucide-react';
 import './AsignacionesList.css';
 
 interface AsignacionesListProps {
@@ -10,7 +10,7 @@ interface AsignacionesListProps {
   onCreate?: () => void;
 }
 
-const FILTERS = ['Todas', 'Activas', 'Finalizadas'];
+const FILTERS = ['Todas', 'Activas', 'En Revisión', 'Finalizadas', 'Con Daños'];
 
 export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
@@ -36,13 +36,16 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
   const filteredAsignaciones = asignaciones.filter(a => {
       if (activeFilter === 'Todas') return true;
       if (activeFilter === 'Activas') return a.estado === EstadoAsignacion.ACTIVA;
+      if (activeFilter === 'En Revisión') return a.estado === EstadoAsignacion.EN_REVISION;
       if (activeFilter === 'Finalizadas') return a.estado === EstadoAsignacion.FINALIZADA;
+      if (activeFilter === 'Con Daños') return a.tieneDanos === true;
       return true;
   });
 
   const getStatusColor = (estado: EstadoAsignacion) => {
       switch (estado) {
           case EstadoAsignacion.ACTIVA: return 'status-blue';
+          case EstadoAsignacion.EN_REVISION: return 'status-yellow';
           case EstadoAsignacion.FINALIZADA: return 'status-green';
           default: return 'status-gray';
       }
@@ -85,9 +88,41 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
                 onClick={() => onEdit?.(asignacion)}
               >
                   <div className="card-top">
-                      <span className={`status-badge ${getStatusColor(asignacion.estado)}`}>
-                          {asignacion.estado}
-                      </span>
+                      <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap'}}>
+                          {asignacion.numeroRegistro && (
+                              <span style={{
+                                  background: '#1e293b',
+                                  color: '#ffffff',
+                                  padding: '0.25rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '800',
+                                  letterSpacing: '0.5px'
+                              }}>
+                                  {asignacion.numeroRegistro}
+                              </span>
+                          )}
+                          <span className={`status-badge ${getStatusColor(asignacion.estado)}`}>
+                              {asignacion.estado.replace('_', ' ')}
+                          </span>
+                          {asignacion.tieneDanos && (
+                              <span style={{
+                                  background: '#fef2f2',
+                                  color: '#ef4444',
+                                  padding: '0.25rem 0.5rem',
+                                  borderRadius: '8px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '700',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  border: '1px solid #fecaca'
+                              }}>
+                                  <AlertTriangle size={12} />
+                                  DAÑOS
+                              </span>
+                          )}
+                      </div>
                       <span className="card-date">
                           {new Date(asignacion.fecha).toLocaleDateString()}
                       </span>

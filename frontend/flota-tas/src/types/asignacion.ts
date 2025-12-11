@@ -1,11 +1,14 @@
 import type { Usuario } from './usuario';
 import type { Vehiculo } from './vehiculo';
 
-export enum EstadoAsignacion {
-  ACTIVA = 'ACTIVA',
-  FINALIZADA = 'FINALIZADA',
-  CANCELADA = 'CANCELADA'
-}
+export const EstadoAsignacion = {
+  ACTIVA: 'ACTIVA',
+  EN_REVISION: 'EN_REVISION',
+  FINALIZADA: 'FINALIZADA',
+  CANCELADA: 'CANCELADA'
+} as const;
+
+export type EstadoAsignacion = typeof EstadoAsignacion[keyof typeof EstadoAsignacion];
 
 export interface FotoAsignacion {
   id: number;
@@ -16,6 +19,7 @@ export interface FotoAsignacion {
 
 export interface Asignacion {
   id: number;
+  numeroRegistro?: string;
   vehiculoId: number;
   usuarioId: number;
   encargadoId: number;
@@ -32,6 +36,7 @@ export interface Asignacion {
   pdfUrl?: string;
   firmaUsuario?: string;
   firmaEncargado?: string;
+  tieneDanos?: boolean;
 
   vehiculo?: Vehiculo;
   usuario?: Usuario;
@@ -61,4 +66,5 @@ export interface UpdateAsignacionDto {
   pdfUrl?: string;
   firmaUsuario?: string;
   firmaEncargado?: string;
+  tieneDanos?: boolean;
 }

@@ -1,15 +1,22 @@
 import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS for frontend
   app.enableCors({
     origin: true, // Allow all origins in development
     credentials: true
+  });
+
+  // Serve static files
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/'
   });
 
   app.setGlobalPrefix('api');

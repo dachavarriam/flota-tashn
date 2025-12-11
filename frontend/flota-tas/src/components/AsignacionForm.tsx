@@ -1,13 +1,14 @@
-import { useState, useEffect, FormEvent, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { asignacionesApi } from '../api/asignaciones';
 import { vehiculosApi } from '../api/vehiculos';
 import { usuariosApi } from '../api/usuarios';
+import { api } from '../api/client';
 import { EstadoAsignacion } from '../types/asignacion';
-import type { Asignacion, CreateAsignacionDto, UpdateAsignacionDto } from '../types/asignacion';
+import type { Asignacion } from '../types/asignacion';
 import type { Vehiculo } from '../types/vehiculo';
 import type { Usuario } from '../types/usuario';
 import type { DockAction } from '../App';
-import SignatureCanvas from 'react-signature-canvas'; // Import Signature
+import SignatureCanvas from 'react-signature-canvas';
 import './AsignacionForm.css';
 import { 
   Car, 
@@ -92,8 +93,20 @@ const FLUIDO_STATES_CYCLE = ['OK', 'Bajo', 'Fuga'];
 
 export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, setDockActions }: AsignacionFormProps) {
   const isEdit = !!asignacion;
+  const [loadedAsignacionId, setLoadedAsignacionId] = useState<number | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    vehiculoId: string;
+    usuarioId: string;
+    encargadoId: string;
+    kmSalida: string;
+    kmRetorno: string;
+    horaSalida: string;
+    horaRetorno: string;
+    uso: string;
+    observaciones: string;
+    estado: EstadoAsignacion;
+  }>({
     vehiculoId: '',
     usuarioId: '',
     encargadoId: '',
@@ -113,10 +126,21 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
   const [alertasVehiculo, setAlertasVehiculo] = useState<string[]>([]);
   
   const [showSignature, setShowSignature] = useState(false);
-  
+
   // Signature Ref
   const sigCanvas = useRef<SignatureCanvas>(null);
   const [firmaData, setFirmaData] = useState<string | null>(null);
+
+  // Ref to store the latest submit handler (prevents stale closure in dock actions)
+  const submitHandlerRef = useRef<() => void>(() => {});
+
+  // Read-only mode and damage report toggle
+  const [allowDamageReport, setAllowDamageReport] = useState(false);
+  const [tieneDanos, setTieneDanos] = useState(false);
+
+  // Show damage report button when EN_REVISION or FINALIZADA
+  const canReportDamage = asignacion?.estado === EstadoAsignacion.EN_REVISION || asignacion?.estado === EstadoAsignacion.FINALIZADA;
+  const isReadOnly = (asignacion?.estado === EstadoAsignacion.FINALIZADA || asignacion?.estado === EstadoAsignacion.EN_REVISION) && !allowDamageReport;
 
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -144,8 +168,9 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
   }, []);
 
   useEffect(() => {
-    if (asignacion) {
-      setFormData({
+    // Only load data when asignacion ID changes (prevent re-initialization on updates)
+    if (asignacion && asignacion.id !== loadedAsignacionId) {
+      const newFormData = {
         vehiculoId: asignacion.vehiculoId.toString(),
         usuarioId: asignacion.usuarioId.toString(),
         encargadoId: asignacion.encargadoId.toString(),
@@ -156,16 +181,41 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
         uso: asignacion.uso || '',
         observaciones: asignacion.observaciones || '',
         estado: asignacion.estado
-      });
-      if (asignacion.checklist) setChecklist(asignacion.checklist as Record<string, boolean>);
-      if (asignacion.niveles) {
+      };
+
+      setFormData(newFormData);
+      setLoadedAsignacionId(asignacion.id);
+
+      // Load checklist or initialize with defaults
+      if (asignacion.checklist && Object.keys(asignacion.checklist).length > 0) {
+        setChecklist(asignacion.checklist as Record<string, boolean>);
+      } else {
+        // Initialize with all items checked (good condition)
+        const initialChecklist: Record<string, boolean> = {};
+        CHECKLIST_GROUPS.forEach(g => g.items.forEach(i => initialChecklist[i.id] = true));
+        setChecklist(initialChecklist);
+      }
+
+      // Load niveles or initialize with defaults
+      if (asignacion.niveles && Object.keys(asignacion.niveles).length > 0) {
           const niv = asignacion.niveles as Record<string, any>;
           setNiveles(niv);
           if (niv.combustible !== undefined) setCombustible(parseInt(niv.combustible));
+      } else {
+        // Initialize with all fluids OK
+        const initialNiveles: Record<string, string> = {};
+        FLUIDOS_ITEMS.forEach(item => initialNiveles[item.id] = 'OK');
+        setNiveles(initialNiveles);
+        setCombustible(100); // Default full tank
       }
-      // If signature exists, we could load it, but usually we just show it's signed
-      if (asignacion.firmaUsuario) setFirmaData(asignacion.firmaUsuario);
-    } else if (currentUser) {
+
+      // If signature exists, load it
+      if (asignacion.firmaUsuario) {
+        setFirmaData(asignacion.firmaUsuario);
+      }
+      // Load damage status
+      if (asignacion.tieneDanos) setTieneDanos(asignacion.tieneDanos);
+    } else if (currentUser && !asignacion && loadedAsignacionId === null) {
       setFormData(prev => ({ ...prev, encargadoId: currentUser.id.toString() }));
       const initialChecklist: Record<string, boolean> = {};
       CHECKLIST_GROUPS.forEach(g => g.items.forEach(i => initialChecklist[i.id] = true));
@@ -173,8 +223,9 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
       const initialNiveles: Record<string, string> = {};
       FLUIDOS_ITEMS.forEach(item => initialNiveles[item.id] = 'OK');
       setNiveles(initialNiveles);
+      setLoadedAsignacionId(-1); // Mark as initialized
     }
-  }, [asignacion, currentUser]);
+  }, [asignacion, currentUser, loadedAsignacionId]);
 
   const handleVehiculoChange = (vehiculoId: string) => {
     handleChange('vehiculoId', vehiculoId);
@@ -191,7 +242,7 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
   };
 
   const handleNivelCycle = (id: string) => {
-      if (isEdit && formData.estado === EstadoAsignacion.FINALIZADA) return;
+      if (isReadOnly) return;
       setNiveles(prev => {
           const current = prev[id] || 'OK';
           const idx = FLUIDO_STATES_CYCLE.indexOf(current);
@@ -201,9 +252,9 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
   };
 
   const handleChecklistToggle = (id: string) => {
-    if (isEdit && formData.estado === EstadoAsignacion.FINALIZADA) return;
+    if (isReadOnly) return;
     setChecklist(prev => ({ ...prev, [id]: !prev[id] }));
-    if (!checklist[id]) { 
+    if (!checklist[id]) {
         setChecklistDetalles(prev => {
             const copy = { ...prev };
             delete copy[id];
@@ -223,11 +274,11 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
               alert("Por favor firme antes de confirmar");
               return;
           }
-          // Get Base64 image
-          const dataUrl = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+          // Get Base64 image directly from canvas
+          const dataUrl = sigCanvas.current.toDataURL('image/png');
           setFirmaData(dataUrl);
           setShowSignature(false);
-          
+
           // Trigger submit after slight delay to allow state update
           setTimeout(() => handleSubmitInternal(dataUrl), 100);
       }
@@ -241,6 +292,31 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
       if (val <= 25) return '#ea4335';
       if (val <= 50) return '#fbbc04';
       return '#34a853';
+  };
+
+  // Helper to convert base64 to File
+  const base64ToFile = (base64: string, filename: string): File => {
+    const arr = base64.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Upload signature to server
+  const uploadSignature = async (asignacionId: number, base64Data: string): Promise<string> => {
+    const file = base64ToFile(base64Data, 'signature.png');
+    const formData = new FormData();
+    formData.append('signature', file);
+
+    const response = await api.post(`/asignaciones/${asignacionId}/upload-signature`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data.url;
   };
 
   const handleSubmitInternal = async (signatureUrl?: string) => {
@@ -260,23 +336,33 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
     }
 
     try {
-      // Common payload
+      // Common payload base (without signature for now)
       const payloadBase = {
           observaciones: obs || undefined,
-          checklist, 
+          checklist,
           niveles: nivelesFinal,
-          firmaUsuario: signatureUrl || firmaData || undefined
       };
 
+      let savedAsignacion;
+
       if (isEdit && asignacion) {
-        await asignacionesApi.update(asignacion.id, {
+        // Build update payload
+        const updatePayload: any = {
             ...payloadBase,
-            estado: formData.estado,
             kmRetorno: formData.kmRetorno ? parseInt(formData.kmRetorno) : undefined,
             horaRetorno: formData.horaRetorno || undefined,
-        });
+            tieneDanos: tieneDanos || undefined,
+        };
+
+        // Only send estado if it's FINALIZADA or CANCELADA (manual transitions)
+        // For automatic transitions (ACTIVA -> EN_REVISION), let backend handle it
+        if (formData.estado === EstadoAsignacion.FINALIZADA || formData.estado === EstadoAsignacion.CANCELADA) {
+          updatePayload.estado = formData.estado;
+        }
+
+        savedAsignacion = await asignacionesApi.update(asignacion.id, updatePayload);
       } else {
-        await asignacionesApi.create({
+        savedAsignacion = await asignacionesApi.create({
           ...payloadBase,
           vehiculoId: parseInt(formData.vehiculoId),
           usuarioId: parseInt(formData.usuarioId),
@@ -285,36 +371,69 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
           uso: formData.uso || undefined,
         });
       }
+
+      // Upload signature if exists (only for new signatures, not existing ones)
+      if (signatureUrl && savedAsignacion?.id) {
+        const uploadedSignatureUrl = await uploadSignature(savedAsignacion.id, signatureUrl);
+        // Update asignacion with signature URL
+        await asignacionesApi.update(savedAsignacion.id, {
+          firmaUsuario: uploadedSignatureUrl
+        });
+      }
+
       onSuccess?.();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al guardar');
+      console.error('❌ Error in handleSubmitInternal:', err);
+      console.error('❌ Error response:', err.response);
+      console.error('❌ Error message:', err.message);
+      setError(err.response?.data?.message || err.message || 'Error al guardar');
     } finally {
       setLoading(false);
     }
   };
 
+  // Update the ref on every render to capture latest state
+  useEffect(() => {
+    submitHandlerRef.current = () => handleSubmitInternal();
+  });
+
   // --- DOCK ACTION INJECTION ---
   useEffect(() => {
       if (setDockActions) {
-          setDockActions([
+          const actions = [
               {
                   label: 'Cancelar',
                   icon: <X size={20} />,
                   onClick: () => onCancel?.(),
-                  variant: 'danger'
-              },
-              {
+                  variant: 'danger' as const
+              }
+          ];
+
+          // Only show "Firmar y Guardar" for new assignments
+          // For editing (EN_REVISION, FINALIZADA, etc), just "Guardar"
+          if (!isEdit) {
+              actions.push({
                   label: 'Firmar y Guardar',
                   icon: <PenTool size={20} />,
                   onClick: () => setShowSignature(true),
-                  variant: 'primary'
-              }
-          ]);
+                  variant: 'primary' as const
+              });
+          } else {
+              actions.push({
+                  label: 'Guardar',
+                  icon: <CheckCircle2 size={20} />,
+                  onClick: () => submitHandlerRef.current?.(),
+                  variant: 'primary' as const
+              });
+          }
+
+          setDockActions(actions);
       }
       return () => {
           setDockActions?.(null);
       };
-  }, [setDockActions, onCancel]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit]);
 
   if (loadingData) return <div className="loading">Cargando...</div>;
 
@@ -326,7 +445,23 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
         <div className="hero-bg"></div>
         <div className="hero-content">
           <CarFront size={80} className="hero-car-icon" />
-          <h2 className="hero-title">{isEdit ? 'Gestionar Asignación' : 'Nueva Asignación'}</h2>
+          <h2 className="hero-title">
+            {isEdit ? 'Gestionar Asignación' : 'Nueva Asignación'}
+            {asignacion?.numeroRegistro && (
+              <span style={{
+                marginLeft: '1rem',
+                fontSize: '1rem',
+                fontWeight: '800',
+                color: '#1e293b',
+                background: '#ffffff',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '8px',
+                letterSpacing: '1px'
+              }}>
+                {asignacion.numeroRegistro}
+              </span>
+            )}
+          </h2>
           <p className="hero-subtitle">Inspección de {vehiculos.find(v => v.id.toString() === formData.vehiculoId)?.placa || 'vehículo'}</p>
         </div>
       </div>
@@ -339,7 +474,7 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                     <h3><Car className="section-icon" /> Datos Generales</h3>
                     <div className="form-group">
                         <label>Vehículo</label>
-                        <select value={formData.vehiculoId} onChange={(e) => handleVehiculoChange(e.target.value)} required disabled={isEdit} className="large-input">
+                        <select value={formData.vehiculoId} onChange={(e) => handleVehiculoChange(e.target.value)} required disabled={isEdit || isReadOnly} className="large-input">
                             <option value="">Seleccionar...</option>
                             {vehiculos.map(v => <option key={v.id} value={v.id}>{v.placa} - {v.modelo}</option>)}
                         </select>
@@ -347,7 +482,7 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                     {alertasVehiculo.length > 0 && (<div className="alertas-box"><ShieldAlert size={18} /> {alertasVehiculo[0]}</div>)}
                     <div className="form-group">
                         <label>Conductor</label>
-                        <select value={formData.usuarioId} onChange={(e) => handleChange('usuarioId', e.target.value)} required disabled={isEdit} className="large-input">
+                        <select value={formData.usuarioId} onChange={(e) => handleChange('usuarioId', e.target.value)} required disabled={isEdit || isReadOnly} className="large-input">
                             <option value="">Seleccionar...</option>
                             {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
                         </select>
@@ -355,11 +490,11 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                     <div className="form-row">
                         <div className="form-group">
                             <label>KM Salida</label>
-                            <input type="number" value={formData.kmSalida} onChange={(e) => handleChange('kmSalida', e.target.value)} disabled={isEdit} className="large-input" />
+                            <input type="number" value={formData.kmSalida} onChange={(e) => handleChange('kmSalida', e.target.value)} disabled={isEdit || isReadOnly} className="large-input" />
                         </div>
                         <div className="form-group">
                             <label>Destino</label>
-                            <input type="text" value={formData.uso} onChange={(e) => handleChange('uso', e.target.value)} disabled={isEdit} placeholder="Ruta..." className="large-input" />
+                            <input type="text" value={formData.uso} onChange={(e) => handleChange('uso', e.target.value)} disabled={isEdit || isReadOnly} placeholder="Ruta..." className="large-input" />
                         </div>
                     </div>
                  </div>
@@ -367,10 +502,10 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                  <div className="form-section highlight-section">
                     <h3><Fuel size={20} /> Combustible: {combustible}%</h3>
                     <div className="fuel-slider-container">
-                        <input 
-                            type="range" min="0" max="100" step="12.5" 
+                        <input
+                            type="range" min="0" max="100" step="12.5"
                             value={combustible} onChange={(e) => setCombustible(parseInt(e.target.value))}
-                            disabled={isEdit && formData.estado === EstadoAsignacion.FINALIZADA}
+                            disabled={isReadOnly}
                             className="fuel-slider-styled"
                             style={{background: `linear-gradient(to right, ${getSliderColor(combustible)} 0%, ${getSliderColor(combustible)} ${combustible}%, #e0e0e0 ${combustible}%, #e0e0e0 100%)`}}
                         />
@@ -382,7 +517,12 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                     <h3><Droplet size={20} /> Fluidos</h3>
                     <div className="fluidos-list">
                         {FLUIDOS_ITEMS.map(item => (
-                            <div key={item.id} className={`fluido-row ${FLUIDO_COLORS[niveles[item.id] || 'OK']}`} onClick={() => handleNivelCycle(item.id)}>
+                            <div
+                                key={item.id}
+                                className={`fluido-row ${FLUIDO_COLORS[niveles[item.id] || 'OK']}`}
+                                onClick={() => !isReadOnly && handleNivelCycle(item.id)}
+                                style={{cursor: isReadOnly ? 'not-allowed' : 'pointer', opacity: isReadOnly ? 0.6 : 1}}
+                            >
                                 <div className="fluido-icon-wrapper">{item.icon}</div>
                                 <span className="fluido-label">{item.label}</span>
                                 <div className={`fluido-btn-state ${FLUIDO_COLORS[niveles[item.id] || 'OK']}`}>{niveles[item.id] || 'OK'}</div>
@@ -402,7 +542,11 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                                 <div className="checklist-list">
                                     {group.items.map(item => (
                                         <div key={item.id} className={`checklist-row ${checklist[item.id] ? 'ok' : 'fail'}`}>
-                                            <div className="row-main" onClick={() => handleChecklistToggle(item.id)}>
+                                            <div
+                                                className="row-main"
+                                                onClick={() => handleChecklistToggle(item.id)}
+                                                style={{cursor: isReadOnly ? 'not-allowed' : 'pointer', opacity: isReadOnly ? 0.6 : 1}}
+                                            >
                                                 <div className="row-info">
                                                     <div className="row-icon">{item.icon}</div>
                                                     <span className="row-label">{item.label}</span>
@@ -411,7 +555,15 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                                             </div>
                                             {!checklist[item.id] && (
                                                 <div className="row-detail">
-                                                    <input type="text" placeholder="Describa la falla..." value={checklistDetalles[item.id] || ''} onChange={(e) => handleChecklistDetalle(item.id, e.target.value)} onClick={(e) => e.stopPropagation()} autoFocus />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Describa la falla..."
+                                                        value={checklistDetalles[item.id] || ''}
+                                                        onChange={(e) => handleChecklistDetalle(item.id, e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        disabled={isReadOnly}
+                                                        autoFocus
+                                                    />
                                                 </div>
                                             )}
                                         </div>
@@ -428,7 +580,7 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                          {FOTOS_REQ.map(photo => (
                              <div key={photo.id} className="photo-slot">
                                  <div className="photo-placeholder"><Camera size={24} strokeWidth={1.5} /><span>{photo.label}</span></div>
-                                 <button type="button" className="btn-upload">Cargar</button>
+                                 <button type="button" className="btn-upload" disabled={isReadOnly} style={{opacity: isReadOnly ? 0.5 : 1, cursor: isReadOnly ? 'not-allowed' : 'pointer'}}>Cargar</button>
                              </div>
                          ))}
                      </div>
@@ -441,23 +593,153 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                 <h3>Cierre</h3>
                 <div className="form-row">
                     <div className="form-group">
-                        <label>Estado</label>
-                        <select value={formData.estado} onChange={(e) => handleChange('estado', e.target.value as any)} className="large-input">
-                            {Object.values(EstadoAsignacion).map(e => <option key={e} value={e}>{e}</option>)}
-                        </select>
+                        <label>Estado Actual</label>
+                        <div style={{
+                            padding: '0.75rem 1rem',
+                            background: '#f8fafc',
+                            borderRadius: '8px',
+                            border: '2px solid #e2e8f0',
+                            fontWeight: '700',
+                            fontSize: '1rem',
+                            color: '#1e293b'
+                        }}>
+                            {formData.estado.replace('_', ' ')}
+                        </div>
+                        <p style={{fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem'}}>
+                            {formData.estado === EstadoAsignacion.ACTIVA && '• Se cambiará a EN REVISIÓN al ingresar KM Retorno'}
+                            {formData.estado === EstadoAsignacion.EN_REVISION && '• Revise daños y marque como FINALIZADA'}
+                        </p>
                     </div>
                     <div className="form-group">
                         <label>KM Retorno</label>
-                        <input type="number" value={formData.kmRetorno} onChange={(e) => handleChange('kmRetorno', e.target.value)} className="large-input" />
+                        <input
+                            type="number"
+                            value={formData.kmRetorno}
+                            onChange={(e) => handleChange('kmRetorno', e.target.value)}
+                            className="large-input"
+                            placeholder={formData.estado === EstadoAsignacion.ACTIVA ? 'Ingrese para marcar como entregado' : ''}
+                        />
                     </div>
                 </div>
+                {formData.estado === EstadoAsignacion.EN_REVISION && (
+                    <div className="form-row" style={{marginTop: '1rem'}}>
+                        <div className="form-group">
+                            <label>Acciones de Supervisor</label>
+                            <div style={{display: 'flex', gap: '1rem'}}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleChange('estado', EstadoAsignacion.FINALIZADA)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.75rem',
+                                        background: '#10b981',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    ✓ Marcar como Finalizada
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleChange('estado', EstadoAsignacion.CANCELADA)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.75rem',
+                                        background: '#ef4444',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    ✗ Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
              </div>
         )}
 
         <div className="form-group">
           <label>Observaciones Generales</label>
-          <textarea rows={2} value={formData.observaciones} onChange={(e) => handleChange('observaciones', e.target.value)} />
+          <textarea rows={2} value={formData.observaciones} onChange={(e) => handleChange('observaciones', e.target.value)} disabled={isReadOnly} />
         </div>
+
+        {/* Signature saved confirmation (image will be used in PDF) */}
+        {asignacion?.firmaUsuario && (
+          <div style={{
+            padding: '1rem',
+            background: '#f0fdf4',
+            borderRadius: '12px',
+            border: '2px solid #86efac',
+            textAlign: 'center',
+            color: '#15803d',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}>
+            <CheckCircle2 size={20} />
+            <span>Firma guardada correctamente</span>
+          </div>
+        )}
+
+        {/* DAMAGE REPORT TOGGLE (for EN_REVISION or FINALIZADA) - At end of form */}
+        {canReportDamage && (
+          <div style={{
+            padding: '1.5rem',
+            textAlign: 'center',
+            background: '#f8fafc',
+            borderRadius: '12px',
+            border: '2px solid #e2e8f0',
+            margin: '1rem 0'
+          }}>
+            <button
+              type="button"
+              onClick={() => {
+                setAllowDamageReport(!allowDamageReport);
+                if (!allowDamageReport) {
+                  setTieneDanos(true);
+                }
+              }}
+              style={{
+                padding: '1rem 2rem',
+                borderRadius: '12px',
+                border: allowDamageReport ? '3px solid #ef4444' : '2px solid #94a3b8',
+                background: allowDamageReport ? '#fef2f2' : '#ffffff',
+                color: allowDamageReport ? '#ef4444' : '#64748b',
+                fontWeight: '700',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                margin: '0 auto',
+                boxShadow: allowDamageReport ? '0 4px 12px rgba(239, 68, 68, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <ShieldAlert size={24} />
+              <span>{allowDamageReport ? '🔴 Reportando Daños' : '¿Tiene Daños?'}</span>
+            </button>
+            <p style={{
+              marginTop: '0.75rem',
+              fontSize: '0.875rem',
+              color: '#64748b',
+              fontWeight: '500'
+            }}>
+              {allowDamageReport
+                ? 'Marca los daños encontrados en la inspección de retorno'
+                : 'Click aquí si el vehículo presenta daños al recibirlo'}
+            </p>
+          </div>
+        )}
 
         {error && <div className="alert alert-error">{error}</div>}
       </form>
