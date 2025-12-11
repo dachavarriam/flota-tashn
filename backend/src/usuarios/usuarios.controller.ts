@@ -56,4 +56,10 @@ export class UsuariosController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usuariosService.remove(id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/asignaciones')
+  getAsignaciones(@Param('id', ParseIntPipe) id: number) {
+    return this.usuariosService.getAsignaciones(id);
+  }
 }

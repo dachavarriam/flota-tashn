@@ -1,6 +1,301 @@
 # Changelog
 
+## 2024-12-11
+
+### Feature: Módulo Completo de Mantenimientos
+
+#### Backend - Mantenimientos CRUD
+- **feat: added Mantenimiento model to Prisma schema**
+  - Fields: vehiculoId, fecha, tipo, descripcion, taller, costo, kmActual, proximoMantenimiento, observaciones
+  - Cascade delete relationship with Vehiculo
+  - Added taller field for workshop tracking
+
+- **feat: created mantenimientos module with full CRUD**
+  - Service with create, findAll, findByVehiculo, findOne, update, remove methods
+  - Validates kmActual >= vehicle's current km
+  - Automatically updates vehicle's kmActual and kmUltimoMantenimiento after maintenance
+  - Controller with role-based permissions (CREATE/UPDATE: ADMIN, SUPERVISOR, ENCARGADO | DELETE: ADMIN only)
+  - Query param support: GET /mantenimientos?vehiculoId=X
+
+#### Frontend - Mantenimientos UI
+- **feat: complete Mantenimientos module with List and Form**
+  - MantenimientosList: Grid cards (responsive 1/2/3 columns)
+  - Shows: vehiculo, tipo, fecha, kmActual, costo, taller, próximo mantenimiento
+  - Role-based edit/delete buttons
+  - MantenimientoForm: Full form with vehicle selector, date, tipo, km, taller, costo, descripción
+
+- **feat: integrated in main navigation**
+  - Added "Servicio" tab in floating dock (Wrench icon)
+  - Accessible to all authenticated users (create/edit restricted by role)
+
+#### Files Created/Modified
+- Backend: schema.prisma, mantenimientos (service, controller, module, DTOs)
+- Frontend: types, API client, components (List, Form), page, App.tsx navigation
+
+## 2024-12-11
+
+### Feature: Dashboard with Role-Based Metrics & Quick Access
+
+#### Backend - User Assignments Endpoint
+- **feat: added GET /usuarios/:id/asignaciones endpoint**
+  - Returns assignments received (as conductor) and assigned (as encargado)
+  - Includes related vehiculo, usuario/encargado, and fotos data
+  - Ordered by fecha DESC for chronological display
+  - Protected with JwtAuthGuard (authenticated users only)
+
+#### Frontend - Dashboard Implementation
+- **feat: created comprehensive Dashboard/HomePage component**
+  - Replaces previous direct-to-module landing after login
+  - New "Inicio" button (Home icon) in floating dock navigation
+  - Dashboard set as default landing page (currentPage = 'dashboard')
+
+- **feat: role-based dashboard views**
+  - **ADMIN**: Full system metrics (all vehicles, all assignments, all users)
+  - **SUPERVISOR/ENCARGADO**: System-wide metrics (all vehicles, all assignments)
+  - **USUARIO**: Personal metrics only (their vehicles, their assignments)
+
+- **feat: metrics widgets**
+  - Flota/Vehículos: Total, disponibles, en uso
+  - Asignaciones: Total, activas, en revisión
+  - Usuarios: Total registered (ADMIN only)
+  - Mantenimiento: Vehicles needing service (>5000 km)
+  - Alertas: Vehicles with reported damages
+  - Color-coded badges (green=available, yellow=warning, red=danger)
+
+- **feat: quick access cards**
+  - Nueva Asignación → Navigate to AsignacionesPage
+  - Ver Flota → Navigate to VehiculosPage
+  - Usuarios → Navigate to UsuariosPage (ADMIN only)
+  - Interactive with hover effects and gradients
+  - Click navigation via onNavigate prop
+
+- **feat: activity feed**
+  - Recent Assignments (last 5)
+  - Shows estado, fecha, vehiculo, conductor
+  - Damage badges for assignments with tieneDanos flag
+  - Role-aware title: "Mis Asignaciones Recientes" for USUARIO
+
+- **feat: maintenance alerts**
+  - Lists vehicles >5000 km since last maintenance
+  - Shows km overdue or km since service
+  - Current km display
+  - Yellow alert styling with warning icons
+  - Filtered to user's vehicles for USUARIO role
+
+- **feat: personalized welcome messages**
+  - "Panel de Control - Gestión de Flota TAS" (ADMIN)
+  - "Panel de Control - Vista General" (SUPERVISOR/ENCARGADO)
+  - "Mi Panel Personal" (USUARIO)
+
+- **feat: responsive design**
+  - Mobile-first layout
+  - Grid breakpoints at 640px, 1024px
+  - Loading state with animated spinner
+  - Empty states with helpful messages
+
+#### Files Created/Modified
+- Created: `/frontend/flota-tas/src/pages/DashboardPage.tsx`
+- Created: `/frontend/flota-tas/src/pages/DashboardPage.css`
+- Modified: `/frontend/flota-tas/src/App.tsx` - Added dashboard routing and "Inicio" nav
+- Modified: `/backend/src/usuarios/usuarios.service.ts` - Added getAsignaciones()
+- Modified: `/backend/src/usuarios/usuarios.controller.ts` - Added GET :id/asignaciones route
+
+#### Testing & Verification
+- ✅ ADMIN sees all system metrics and all assignments
+- ✅ SUPERVISOR/ENCARGADO sees system metrics (no user count)
+- ✅ USUARIO sees only their personal metrics and assignments
+- ✅ Quick access cards navigate correctly
+- ✅ Maintenance alerts calculated correctly (>5000 km)
+- ✅ Damage badges show for tieneDanos assignments
+- ✅ Responsive layout works on mobile and desktop
+- ✅ Dashboard is default landing page after login
+
+## 2024-12-11
+
+### Feature: Vehicle Availability & Assignment Validations
+
+#### Backend - Validation & Availability Logic
+- **feat: added vehicle availability check in VehiculosService**
+  - Modified `findAll()` to include active assignments (ACTIVA/EN_REVISION states)
+  - Added `disponible` flag to vehicle responses
+  - Added `asignacionActiva` field with assignee and state info
+- **feat: added validation to prevent duplicate assignments**
+  - Added check in AsignacionesService create() method
+  - Blocks new assignments for vehicles with ACTIVA or EN_REVISION state
+  - Returns clear error message with current assignee name
+- **feat: added kilometraje validations**
+  - Made kmSalida required in CreateAsignacionDto
+  - Added validation: kmRetorno must be greater than kmSalida
+  - Clear error messages for validation failures
+
+#### Frontend - UI Updates & Validations
+- **feat: updated VehiculosList to show availability status**
+  - Visual differentiation for available vs. in-use vehicles
+  - Green badge for "Disponible", red badge for "En Uso"
+  - Red gradient background for unavailable vehicles
+  - Shows current assignee and state when vehicle is in use
+  - Added CSS classes: `.badge-disponible`, `.badge-en-uso`, `.no-disponible`
+- **feat: updated AsignacionForm with validations**
+  - Made kmSalida required field (marked with *)
+  - Added client-side validation for kmRetorno > kmSalida
+  - Disabled unavailable vehicles in vehicle selector dropdown
+  - Shows "(En Uso)" label for unavailable vehicles in dropdown
+  - Clear error messages displayed to user on validation failures
+- **fix: updated Vehiculo TypeScript interface**
+  - Added `disponible?: boolean` field
+  - Added `asignacionActiva` field with assignment details
+  - Added `asignaciones` array for backend compatibility
+
+#### Testing & Verification
+- ✅ Vehicles marked as unavailable when ACTIVA or EN_REVISION
+- ✅ Cannot create new assignment for vehicle already in use
+- ✅ kmSalida is required for new assignments
+- ✅ kmRetorno must be greater than kmSalida
+- ✅ Visual feedback in VehiculosList for availability
+- ✅ Dropdown prevents selection of unavailable vehicles
+
+## 2024-12-11
+
+### Feature: Photo Capture & Gallery for Damage Documentation
+
+#### Frontend - Photo Gallery Component
+- **feat: created PhotoGallery component for damage documentation**
+  - Implemented photo capture from camera or gallery
+  - Added tipo selector (frontal, trasera, lateral_izq, lateral_der, dano)
+  - Created modern grid layout with photo cards
+  - Added delete functionality for photos
+  - Responsive design for mobile and desktop
+  - Component files: PhotoGallery.tsx and PhotoGallery.css
+  - Modern gradient buttons: blue to dark blue (camera), red to dark red (gallery)
+- **feat: integrated PhotoGallery into AsignacionForm**
+  - Shows when damage report is activated (allowDamageReport flag)
+  - Displays existing photos when editing assignments
+  - Automatically uploads new photos on save
+  - Read-only mode blocks photo editing when not in damage report mode
+  - Removed old unused photo section with non-functional upload slots
+  - Photos open in new tab on click for full-size viewing
+- **fix: photo URL construction and display**
+  - Fixed photo URLs to properly construct server base URL
+  - Removed `/api` suffix correctly using regex replace
+  - Photos now load and display correctly from backend static assets
+
+#### Backend - Photo Upload & Storage
+- **feat: enhanced photo upload endpoint with tipo support**
+  - Modified `/asignaciones/:id/upload-photos` to accept photo tipos
+  - Added automatic database persistence for uploaded photos
+  - Created `addPhotos()` method in AsignacionesService
+  - Added `deletePhoto()` method for individual photo deletion
+  - Added DELETE endpoint `/asignaciones/photos/:photoId`
+  - Enhanced logging for photo operations
+- **fix: static file serving path resolution**
+  - Fixed path in main.ts to use `join(__dirname, '..', '..', 'uploads')`
+  - Correctly resolves from `dist/src/main.js` to backend root `uploads/` folder
+  - Photos now serve correctly with HTTP 200 response
+
+#### Features & Verification
+- ✅ Capture photos from camera or select from gallery
+- ✅ Categorize photos by type (frontal, trasera, laterales, daños)
+- ✅ Upload multiple photos at once
+- ✅ Display photos in modern grid with tipo badges and color coding
+- ✅ Delete individual photos (only when allowDamageReport is active)
+- ✅ Photos persist in database (FotoAsignacion table)
+- ✅ Automatic upload on assignment save
+- ✅ Load existing photos when editing
+- ✅ Photos display correctly with proper URLs
+- ✅ Click to open photos in full size
+- ✅ Read-only mode prevents editing when assignment is ACTIVA
+
+### Critical Bug Fixes - Asignaciones Form & Estado Flow
+
+#### Frontend - AsignacionForm Critical Fixes
+- **fix: resolved stale closure bug causing formData to become empty on save**
+  - Implemented useRef pattern to maintain stable reference to submit handler
+  - Added `submitHandlerRef` to prevent dock action buttons from capturing stale state
+  - Fixed component re-mounting issue that was clearing form state
+  - Solution: Lines 135, 395-397, 425 in AsignacionForm.tsx
+- **fix: removed re-initialization bug in useEffect**
+  - Added `loadedAsignacionId` tracking to prevent useEffect from clearing formData on updates
+  - Form data now persists correctly throughout edit lifecycle
+- **fix: parent component timing issue**
+  - Modified `handleSuccess` in AsignacionesPage.tsx to delay unmounting with setTimeout
+  - Prevents form component from unmounting during save operation
+- **chore: cleaned up all debugging console.logs**
+  - Removed verbose logging from AsignacionForm.tsx
+  - Kept only essential production logs for monitoring
+
+#### Backend - Automatic Estado Flow Implementation
+- **feat: implemented automatic estado transitions**
+  - ACTIVA → EN_REVISION: Auto-transition when kmRetorno is provided (vehicle returned)
+  - FINALIZADA: Manual transition by supervisor after damage review
+  - CANCELADA: Manual transition if assignment is cancelled
+  - Added intelligent logic in asignaciones.service.ts update method (lines 119-131)
+- **fix: checklist and niveles persistence**
+  - Added missing fields to UpdateAsignacionDto: checklist, niveles, observaciones, tieneDanos
+  - Data now persists correctly on updates
+- **fix: numeroRegistro generation on update**
+  - Modified update() method to generate sequential registration numbers (TFL-0001, TFL-0002...)
+  - Numbers generated when firmaUsuario is added and numeroRegistro doesn't exist
+  - Added logging for numero registro generation (line 110)
+- **fix: TypeScript compilation error**
+  - Removed invalid firmaUsuario access in create() method
+  - Signature is always uploaded via separate update() call
+- **feat: enhanced logging for estado transitions**
+  - Added production-ready logs for auto-transitions and manual transitions
+  - Format: `🔄 Auto-transition: Asignacion #7 ACTIVA → EN_REVISION (kmRetorno provided)`
+  - Format: `✅ Manual transition: Asignacion #7 EN_REVISION → FINALIZADA`
+
+#### Backend - Schema Updates
+- **feat: added EN_REVISION estado to Prisma schema**
+  - Migration: 20251211000747_add_en_revision_and_tiene_danos
+  - Updated EstadoAsignacion enum to include EN_REVISION state
+  - Added tieneDanos boolean field to track damage status
+
+#### Testing & Verification
+- ✅ Verified complete estado flow: ACTIVA → EN_REVISION → FINALIZADA
+- ✅ Verified checklist items persist correctly
+- ✅ Verified niveles de fluidos persist correctly
+- ✅ Verified numeroRegistro generates sequentially
+- ✅ Verified formData saves correctly without becoming empty
+- ✅ Verified TypeScript compiles without errors
+
 ## 2024-12-09
+
+### Modified by Gemini (UI/UX Overhaul & Features)
+
+#### Frontend - UI/UX Redesign
+- feat: implemented **Floating Dock Navigation** replacing traditional navbar
+- feat: redesigned **VehiculosList** with modern "Weather Card" style and responsive grid
+- feat: redesigned **UsuariosList** and **AsignacionesList** with iOS-style cards and quick filters
+- feat: implemented "Burger" style header for **AsignacionForm** with overlapping card effect
+- feat: improved form controls: Horizontal Fuel Slider with dynamic colors, Cyclic Fluid Buttons, and Toggle Switches for checklist
+- style: unified "Add" buttons to floating circular action buttons
+- style: implemented containerized layout (`main-viewport`) for better responsiveness on all devices
+
+#### Frontend - New Features
+- feat: integrated **Signature Capture** using `react-signature-canvas` in a full-screen modal
+- feat: added support for dynamic vehicle images based on license plate (`/public/vehiculos/[PLACA].png`)
+- feat: added context-aware action dock (Cancel/Sign) when inside forms
+- feat: implemented signature upload to server (converts base64 to File and uploads)
+- feat: added helper functions for base64 to File conversion in AsignacionForm
+- refactor: streamlined CSS for consistency across all modules
+
+#### Frontend - UI/UX Improvements
+- fix: header now has rounded corners and matches background color (#f2f4f8)
+- fix: header width now matches content width for consistent layout
+- fix: Cancel button in dock now displays white background with red text (forced with !important)
+- style: header is now sticky with proper spacing (top: 1rem, border-radius: 24px)
+
+#### Backend
+- feat: implemented complete CRUD for **Asignaciones** module (DTOs, Service, Controller, Guards)
+- feat: implemented complete CRUD for **Usuarios** module (finalized logic and DTOs)
+- feat: added `test-asignaciones.sh` script for automated API testing of assignments
+- chore: installed `@nestjs/mapped-types` to support PartialType in DTOs
+- chore: updated `CreateAsignacionDto` and `UpdateAsignacionDto` to fix class duplications and strict initialization
+- fix: removed `SUPERUSER` role from controller decorators to align with requirements
+- feat: implemented file upload system with multer for photos and signatures
+- feat: added AsignacionesUploadController with endpoints for signature and photo uploads
+- feat: configured static file serving for /uploads directory
+- chore: created upload directories (uploads/signatures and uploads/photos)
 
 ### Backend
 

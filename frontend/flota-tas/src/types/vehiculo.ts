@@ -7,6 +7,15 @@ export interface Vehiculo {
   kmActual: number;
   kmUltimoMantenimiento: number;
   fechaUltimoMantenimiento: Date | null;
+  disponible?: boolean;
+  asignacionActiva?: {
+    id: number;
+    estado: string;
+    usuario: {
+      nombre: string;
+    };
+  } | null;
+  asignaciones?: any[]; // For backend compatibility
 }
 
 export interface CreateVehiculoDto {

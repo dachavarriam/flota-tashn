@@ -47,6 +47,7 @@ model Vehiculo {
 
 model Asignacion {
   id             Int      @id @default(autoincrement())
+  numeroRegistro String?  @unique
   vehiculoId     Int
   usuarioId      Int
   encargadoId    Int
@@ -63,6 +64,7 @@ model Asignacion {
   pdfUrl         String?
   firmaUsuario   String?
   firmaEncargado String?
+  tieneDanos     Boolean  @default(false)
 
   vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id])
   usuario     Usuario  @relation("UsuarioAsignaciones", fields: [usuarioId], references: [id])
@@ -72,6 +74,7 @@ model Asignacion {
 
 enum EstadoAsignacion {
   ACTIVA
+  EN_REVISION
   FINALIZADA
   CANCELADA
 }
@@ -91,10 +94,11 @@ model Mantenimiento {
   fecha                DateTime @default(now())
   tipo                 String
   descripcion          String
+  taller               String?
   costo                Float?
   kmActual             Int
   proximoMantenimiento Int?
   observaciones        String?
 
-  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id])
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
 }
