@@ -1,5 +1,60 @@
 # Changelog
 
+## 2024-12-10
+
+### Critical Bug Fixes - Asignaciones Form & Estado Flow
+
+#### Frontend - AsignacionForm Critical Fixes
+- **fix: resolved stale closure bug causing formData to become empty on save**
+  - Implemented useRef pattern to maintain stable reference to submit handler
+  - Added `submitHandlerRef` to prevent dock action buttons from capturing stale state
+  - Fixed component re-mounting issue that was clearing form state
+  - Solution: Lines 135, 395-397, 425 in AsignacionForm.tsx
+- **fix: removed re-initialization bug in useEffect**
+  - Added `loadedAsignacionId` tracking to prevent useEffect from clearing formData on updates
+  - Form data now persists correctly throughout edit lifecycle
+- **fix: parent component timing issue**
+  - Modified `handleSuccess` in AsignacionesPage.tsx to delay unmounting with setTimeout
+  - Prevents form component from unmounting during save operation
+- **chore: cleaned up all debugging console.logs**
+  - Removed verbose logging from AsignacionForm.tsx
+  - Kept only essential production logs for monitoring
+
+#### Backend - Automatic Estado Flow Implementation
+- **feat: implemented automatic estado transitions**
+  - ACTIVA → EN_REVISION: Auto-transition when kmRetorno is provided (vehicle returned)
+  - FINALIZADA: Manual transition by supervisor after damage review
+  - CANCELADA: Manual transition if assignment is cancelled
+  - Added intelligent logic in asignaciones.service.ts update method (lines 119-131)
+- **fix: checklist and niveles persistence**
+  - Added missing fields to UpdateAsignacionDto: checklist, niveles, observaciones, tieneDanos
+  - Data now persists correctly on updates
+- **fix: numeroRegistro generation on update**
+  - Modified update() method to generate sequential registration numbers (TFL-0001, TFL-0002...)
+  - Numbers generated when firmaUsuario is added and numeroRegistro doesn't exist
+  - Added logging for numero registro generation (line 110)
+- **fix: TypeScript compilation error**
+  - Removed invalid firmaUsuario access in create() method
+  - Signature is always uploaded via separate update() call
+- **feat: enhanced logging for estado transitions**
+  - Added production-ready logs for auto-transitions and manual transitions
+  - Format: `🔄 Auto-transition: Asignacion #7 ACTIVA → EN_REVISION (kmRetorno provided)`
+  - Format: `✅ Manual transition: Asignacion #7 EN_REVISION → FINALIZADA`
+
+#### Backend - Schema Updates
+- **feat: added EN_REVISION estado to Prisma schema**
+  - Migration: 20251211000747_add_en_revision_and_tiene_danos
+  - Updated EstadoAsignacion enum to include EN_REVISION state
+  - Added tieneDanos boolean field to track damage status
+
+#### Testing & Verification
+- ✅ Verified complete estado flow: ACTIVA → EN_REVISION → FINALIZADA
+- ✅ Verified checklist items persist correctly
+- ✅ Verified niveles de fluidos persist correctly
+- ✅ Verified numeroRegistro generates sequentially
+- ✅ Verified formData saves correctly without becoming empty
+- ✅ Verified TypeScript compiles without errors
+
 ## 2024-12-09
 
 ### Modified by Gemini (UI/UX Overhaul & Features)

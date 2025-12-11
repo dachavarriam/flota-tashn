@@ -150,12 +150,40 @@ export class AsignacionesService {
     await this.findOne(id); // Verify existence
 
     // Manually delete photos first if cascade isn't set in DB
-    // Or try delete and see. 
+    // Or try delete and see.
     // To be safe and explicit:
     await this.prisma.fotoAsignacion.deleteMany({ where: { asignacionId: id } });
 
     return this.prisma.asignacion.delete({
       where: { id },
+    });
+  }
+
+  // Add photos to an existing asignacion
+  async addPhotos(id: number, fotos: { tipo: string; url: string }[]) {
+    await this.findOne(id); // Verify existence
+
+    // Create all photos in a transaction
+    const createdPhotos = await Promise.all(
+      fotos.map(foto =>
+        this.prisma.fotoAsignacion.create({
+          data: {
+            asignacionId: id,
+            tipo: foto.tipo,
+            url: foto.url
+          }
+        })
+      )
+    );
+
+    console.log(`✅ Added ${createdPhotos.length} photos to asignacion #${id}`);
+    return createdPhotos;
+  }
+
+  // Delete a specific photo
+  async deletePhoto(photoId: number) {
+    return this.prisma.fotoAsignacion.delete({
+      where: { id: photoId }
     });
   }
 }

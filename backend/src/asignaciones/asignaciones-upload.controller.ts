@@ -1,22 +1,26 @@
 import {
   Controller,
   Post,
+  Delete,
   UploadedFile,
   UploadedFiles,
   UseInterceptors,
   BadRequestException,
   UseGuards,
   Param,
-  ParseIntPipe
+  ParseIntPipe,
+  Body
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { AsignacionesService } from './asignaciones.service';
 
 @Controller('asignaciones')
 @UseGuards(JwtAuthGuard)
 export class AsignacionesUploadController {
+  constructor(private readonly asignacionesService: AsignacionesService) {}
 
   // Upload single signature
   @Post(':id/upload-signature')
@@ -60,7 +64,7 @@ export class AsignacionesUploadController {
     };
   }
 
-  // Upload multiple photos
+  // Upload multiple photos with tipo (tipo de foto: frontal, trasera, lateral_izq, lateral_der, dano)
   @Post(':id/upload-photos')
   @UseInterceptors(
     FilesInterceptor('photos', 10, {
@@ -86,19 +90,52 @@ export class AsignacionesUploadController {
       }
     })
   )
-  uploadPhotos(
+  async uploadPhotos(
     @Param('id', ParseIntPipe) id: number,
-    @UploadedFiles() files: Express.Multer.File[]
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body('tipos') tipos: string // JSON string with array of tipos matching files order
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No se subieron archivos');
     }
 
-    return files.map((file) => ({
+    // Parse tipos array (sent as JSON string from multipart form)
+    let tiposArray: string[] = [];
+    if (tipos) {
+      try {
+        tiposArray = JSON.parse(tipos);
+      } catch {
+        // If parsing fails, default all to 'general'
+        tiposArray = files.map(() => 'general');
+      }
+    } else {
+      tiposArray = files.map(() => 'general');
+    }
+
+    // Save photos to database
+    const fotosData = files.map((file, index) => ({
+      tipo: tiposArray[index] || 'general',
+      url: `/uploads/photos/${file.filename}`
+    }));
+
+    await this.asignacionesService.addPhotos(id, fotosData);
+
+    console.log(`📸 Uploaded ${files.length} photos for asignacion #${id}`);
+
+    return files.map((file, index) => ({
       url: `/uploads/photos/${file.filename}`,
       filename: file.filename,
+      tipo: tiposArray[index] || 'general',
       size: file.size,
       mimetype: file.mimetype
     }));
+  }
+
+  // Delete a photo
+  @Delete('photos/:photoId')
+  async deletePhoto(@Param('photoId', ParseIntPipe) photoId: number) {
+    await this.asignacionesService.deletePhoto(photoId);
+    console.log(`🗑️ Deleted photo #${photoId}`);
+    return { message: 'Foto eliminada correctamente' };
   }
 }

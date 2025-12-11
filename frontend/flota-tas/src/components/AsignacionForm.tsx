@@ -9,6 +9,7 @@ import type { Vehiculo } from '../types/vehiculo';
 import type { Usuario } from '../types/usuario';
 import type { DockAction } from '../App';
 import SignatureCanvas from 'react-signature-canvas';
+import { PhotoGallery } from './PhotoGallery';
 import './AsignacionForm.css';
 import { 
   Car, 
@@ -138,6 +139,9 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
   const [allowDamageReport, setAllowDamageReport] = useState(false);
   const [tieneDanos, setTieneDanos] = useState(false);
 
+  // Photos state
+  const [photos, setPhotos] = useState<Array<{ id?: number; url: string; tipo: string; file?: File }>>([]);
+
   // Show damage report button when EN_REVISION or FINALIZADA
   const canReportDamage = asignacion?.estado === EstadoAsignacion.EN_REVISION || asignacion?.estado === EstadoAsignacion.FINALIZADA;
   const isReadOnly = (asignacion?.estado === EstadoAsignacion.FINALIZADA || asignacion?.estado === EstadoAsignacion.EN_REVISION) && !allowDamageReport;
@@ -215,6 +219,16 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
       }
       // Load damage status
       if (asignacion.tieneDanos) setTieneDanos(asignacion.tieneDanos);
+
+      // Load existing photos
+      if (asignacion.fotos && asignacion.fotos.length > 0) {
+        const existingPhotos = asignacion.fotos.map(foto => ({
+          id: foto.id,
+          url: foto.url,
+          tipo: foto.tipo
+        }));
+        setPhotos(existingPhotos);
+      }
     } else if (currentUser && !asignacion && loadedAsignacionId === null) {
       setFormData(prev => ({ ...prev, encargadoId: currentUser.id.toString() }));
       const initialChecklist: Record<string, boolean> = {};
@@ -379,6 +393,29 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
         await asignacionesApi.update(savedAsignacion.id, {
           firmaUsuario: uploadedSignatureUrl
         });
+      }
+
+      // Upload new photos (those with file property)
+      const newPhotos = photos.filter(p => p.file);
+      if (newPhotos.length > 0 && savedAsignacion?.id) {
+        const formDataPhotos = new FormData();
+        const tipos: string[] = [];
+
+        newPhotos.forEach(photo => {
+          if (photo.file) {
+            formDataPhotos.append('photos', photo.file);
+            tipos.push(photo.tipo);
+          }
+        });
+
+        // Send tipos as JSON string
+        formDataPhotos.append('tipos', JSON.stringify(tipos));
+
+        await api.post(`/asignaciones/${savedAsignacion.id}/upload-photos`, formDataPhotos, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        console.log(`📸 Uploaded ${newPhotos.length} photos`);
       }
 
       onSuccess?.();
@@ -738,6 +775,21 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                 ? 'Marca los daños encontrados en la inspección de retorno'
                 : 'Click aquí si el vehículo presenta daños al recibirlo'}
             </p>
+          </div>
+        )}
+
+        {/* Photo Gallery - Show if damage report is active or if editing existing assignment */}
+        {(allowDamageReport || (isEdit && photos.length > 0)) && (
+          <div className="form-section" style={{ marginTop: '1.5rem' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Camera size={24} />
+              Fotos de Daños
+            </h3>
+            <PhotoGallery
+              photos={photos}
+              onPhotosChange={setPhotos}
+              readOnly={isReadOnly}
+            />
           </div>
         )}
 
