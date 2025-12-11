@@ -11,8 +11,7 @@ export class CreateAsignacionDto {
   encargadoId!: number;
 
   @IsInt()
-  @IsOptional()
-  kmSalida?: number;
+  kmSalida!: number;
 
   @IsString()
   @IsOptional()

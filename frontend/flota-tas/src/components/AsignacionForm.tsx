@@ -338,6 +338,23 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
   };
 
   const handleSubmitInternal = async (signatureUrl?: string) => {
+    // Validate kmSalida is required for new assignments
+    if (!isEdit && !formData.kmSalida) {
+      setError('El kilometraje de salida es obligatorio');
+      return;
+    }
+
+    // Validate kmRetorno > kmSalida when updating
+    if (isEdit && formData.kmRetorno) {
+      const kmSalida = parseInt(formData.kmSalida);
+      const kmRetorno = parseInt(formData.kmRetorno);
+
+      if (kmRetorno <= kmSalida) {
+        setError(`El kilometraje de retorno (${kmRetorno}) debe ser mayor al kilometraje de salida (${kmSalida})`);
+        return;
+      }
+    }
+
     setLoading(true);
     const nivelesFinal = { ...niveles, combustible };
     let obs = formData.observaciones;
@@ -517,7 +534,16 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                         <label>Vehículo</label>
                         <select value={formData.vehiculoId} onChange={(e) => handleVehiculoChange(e.target.value)} required disabled={isEdit || isReadOnly} className="large-input">
                             <option value="">Seleccionar...</option>
-                            {vehiculos.map(v => <option key={v.id} value={v.id}>{v.placa} - {v.modelo}</option>)}
+                            {vehiculos.map(v => (
+                              <option
+                                key={v.id}
+                                value={v.id}
+                                disabled={!v.disponible}
+                                style={{color: !v.disponible ? '#999' : undefined}}
+                              >
+                                {v.placa} - {v.modelo} {!v.disponible ? '(En Uso)' : ''}
+                              </option>
+                            ))}
                         </select>
                     </div>
                     {alertasVehiculo.length > 0 && (<div className="alertas-box"><ShieldAlert size={18} /> {alertasVehiculo[0]}</div>)}
@@ -530,8 +556,8 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                     </div>
                     <div className="form-row">
                         <div className="form-group">
-                            <label>KM Salida</label>
-                            <input type="number" value={formData.kmSalida} onChange={(e) => handleChange('kmSalida', e.target.value)} disabled={isEdit || isReadOnly} className="large-input" />
+                            <label>KM Salida *</label>
+                            <input type="number" value={formData.kmSalida} onChange={(e) => handleChange('kmSalida', e.target.value)} disabled={isEdit || isReadOnly} required className="large-input" />
                         </div>
                         <div className="form-group">
                             <label>Destino</label>

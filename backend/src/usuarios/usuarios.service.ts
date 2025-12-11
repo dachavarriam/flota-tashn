@@ -105,4 +105,51 @@ export class UsuariosService {
     const deleted = await this.prisma.usuario.delete({ where: { id } });
     return this.sanitize(deleted);
   }
+
+  async getAsignaciones(id: number) {
+    // Verify user exists
+    await this.findOne(id);
+
+    // Get asignaciones where user is the conductor or encargado
+    const asignacionesRecibidas = await this.prisma.asignacion.findMany({
+      where: { usuarioId: id },
+      include: {
+        vehiculo: true,
+        encargado: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true
+          }
+        },
+        fotos: true
+      },
+      orderBy: {
+        fecha: 'desc'
+      }
+    });
+
+    const asignacionesAsignadas = await this.prisma.asignacion.findMany({
+      where: { encargadoId: id },
+      include: {
+        vehiculo: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true
+          }
+        },
+        fotos: true
+      },
+      orderBy: {
+        fecha: 'desc'
+      }
+    });
+
+    return {
+      recibidas: asignacionesRecibidas,
+      asignadas: asignacionesAsignadas
+    };
+  }
 }

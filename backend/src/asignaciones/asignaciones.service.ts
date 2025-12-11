@@ -41,6 +41,25 @@ export class AsignacionesService {
     const encargado = await this.prisma.usuario.findUnique({ where: { id: encargadoId } });
     if (!encargado) throw new NotFoundException(`Encargado con ID ${encargadoId} no encontrado`);
 
+    // Check if vehicle already has an active assignment
+    const activeAssignment = await this.prisma.asignacion.findFirst({
+      where: {
+        vehiculoId,
+        estado: {
+          in: ['ACTIVA', 'EN_REVISION']
+        }
+      },
+      include: {
+        usuario: { select: { nombre: true } }
+      }
+    });
+
+    if (activeAssignment) {
+      throw new BadRequestException(
+        `El vehículo ${vehiculo.placa} ya está asignado a ${activeAssignment.usuario.nombre} (Estado: ${activeAssignment.estado})`
+      );
+    }
+
     // Note: numeroRegistro is generated when signature is uploaded (in update method)
     // Never generate it here in create, as signature is uploaded separately
     const numeroRegistro = null;
@@ -102,6 +121,19 @@ export class AsignacionesService {
     const existing = await this.findOne(id); // Verify existence
 
     const { fotos, ...data } = updateAsignacionDto;
+
+    // Validate kmRetorno > kmSalida
+    if (data.kmRetorno !== undefined) {
+      const kmSalida = existing.kmSalida;
+      if (!kmSalida) {
+        throw new BadRequestException('No se puede establecer kmRetorno sin un kmSalida registrado');
+      }
+      if (data.kmRetorno <= kmSalida) {
+        throw new BadRequestException(
+          `El kilometraje de retorno (${data.kmRetorno}) debe ser mayor al kilometraje de salida (${kmSalida})`
+        );
+      }
+    }
 
     // Generate numeroRegistro if firmaUsuario is being added and doesn't exist yet
     let numeroRegistro = existing.numeroRegistro;

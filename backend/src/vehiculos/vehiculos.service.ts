@@ -39,11 +39,40 @@ export class VehiculosService {
   }
 
   async findAll() {
-    return await this.prisma.vehiculo.findMany({
+    const vehiculos = await this.prisma.vehiculo.findMany({
+      include: {
+        asignaciones: {
+          where: {
+            estado: {
+              in: ['ACTIVA', 'EN_REVISION']
+            }
+          },
+          take: 1,
+          orderBy: {
+            fecha: 'desc'
+          },
+          select: {
+            id: true,
+            estado: true,
+            usuario: {
+              select: {
+                nombre: true
+              }
+            }
+          }
+        }
+      },
       orderBy: {
         id: 'desc'
       }
     });
+
+    // Add availability flag to each vehicle
+    return vehiculos.map(v => ({
+      ...v,
+      disponible: v.asignaciones.length === 0,
+      asignacionActiva: v.asignaciones[0] || null
+    }));
   }
 
   async findOne(id: number) {

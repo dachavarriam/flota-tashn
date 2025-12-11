@@ -94,10 +94,11 @@ model Mantenimiento {
   fecha                DateTime @default(now())
   tipo                 String
   descripcion          String
+  taller               String?
   costo                Float?
   kmActual             Int
   proximoMantenimiento Int?
   observaciones        String?
 
-  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id])
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
 }

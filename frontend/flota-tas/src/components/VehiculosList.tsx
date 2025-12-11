@@ -76,23 +76,30 @@ export function VehiculosList({ onEdit, onCreate }: VehiculosListProps) {
       {/* Cards Grid */}
       <div className="vehiculos-grid">
         {filteredVehiculos.map((vehiculo) => (
-            <div 
-                key={vehiculo.id} 
-                className="vehiculo-card"
+            <div
+                key={vehiculo.id}
+                className={`vehiculo-card ${!vehiculo.disponible ? 'no-disponible' : ''}`}
                 onClick={() => onEdit?.(vehiculo)}
             >
                 <div className="card-content">
                     <div className="card-info">
-                        <span className="card-badge">Disponible</span>
+                        <span className={`card-badge ${vehiculo.disponible ? 'badge-disponible' : 'badge-en-uso'}`}>
+                          {vehiculo.disponible ? 'Disponible' : 'En Uso'}
+                        </span>
                         <h2 className="card-placa">{vehiculo.placa}</h2>
                         <p className="card-model">{vehiculo.marca} {vehiculo.modelo}</p>
                         <p className="card-km">{vehiculo.kmActual.toLocaleString()} km</p>
+                        {vehiculo.asignacionActiva && (
+                          <p className="card-asignacion-info" style={{fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem'}}>
+                            Asignado a: {vehiculo.asignacionActiva.usuario.nombre} ({vehiculo.asignacionActiva.estado})
+                          </p>
+                        )}
                     </div>
                     <div className="card-image-wrapper">
-                        <img 
-                            src={getCarImage(vehiculo.placa)} 
-                            alt={vehiculo.placa} 
-                            className="card-image" 
+                        <img
+                            src={getCarImage(vehiculo.placa)}
+                            alt={vehiculo.placa}
+                            className="card-image"
                             onError={handleImageError}
                         />
                     </div>

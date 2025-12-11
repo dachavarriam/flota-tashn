@@ -25,5 +25,10 @@ export const usuariosApi = {
   delete: async (id: number): Promise<Usuario> => {
     const { data } = await api.delete<Usuario>(`/usuarios/${id}`);
     return data;
+  },
+
+  getAsignaciones: async (id: number): Promise<{recibidas: any[], asignadas: any[]}> => {
+    const { data } = await api.get(`/usuarios/${id}/asignaciones`);
+    return data;
   }
 };

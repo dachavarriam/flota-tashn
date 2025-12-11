@@ -3,10 +3,12 @@ import type { FormEvent } from 'react';
 import './App.css';
 import logoTas from './assets/LogoTAS_circular.png';
 import { useAuth } from './context/AuthContext';
+import { DashboardPage } from './pages/DashboardPage';
 import { VehiculosPage } from './pages/VehiculosPage';
 import { UsuariosPage } from './pages/UsuariosPage';
 import { AsignacionesPage } from './pages/AsignacionesPage';
-import { Car, ClipboardCheck, User, LogOut, Check, X } from 'lucide-react';
+import { MantenimientosPage } from './pages/MantenimientosPage';
+import { Car, ClipboardCheck, User, LogOut, Check, X, Home, Wrench } from 'lucide-react';
 
 // Tipos para acciones del Dock
 export interface DockAction {
@@ -23,7 +25,7 @@ function App() {
   const [info, setInfo] = useState<string | null>(null);
   
   // Navigation State
-  const [currentPage, setCurrentPage] = useState<'vehiculos' | 'usuarios' | 'asignaciones'>('vehiculos');
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'vehiculos' | 'usuarios' | 'asignaciones' | 'mantenimientos'>('dashboard');
   
   // Dock Actions State (null = default nav, array = custom actions)
   const [dockActions, setDockActions] = useState<DockAction[] | null>(null);
@@ -64,14 +66,18 @@ function App() {
 
         {/* Main Content */}
         <main className="main-viewport">
+          {currentPage === 'dashboard' && (
+            <DashboardPage onNavigate={(page) => setCurrentPage(page)} />
+          )}
           {currentPage === 'vehiculos' && <VehiculosPage />}
-          
+
           {/* Pasamos setDockActions a AsignacionesPage para que controle el dock */}
           {currentPage === 'asignaciones' && (
               <AsignacionesPage setDockActions={setDockActions} />
           )}
-          
+
           {currentPage === 'usuarios' && <UsuariosPage />}
+          {currentPage === 'mantenimientos' && <MantenimientosPage />}
         </main>
 
         {/* FLOATING DOCK DINÁMICO */}
@@ -93,15 +99,23 @@ function App() {
             ) : (
                 // NAVIGATION MODE (Default)
                 <div className="floating-dock">
-                    <button 
+                    <button
+                        className={`dock-item ${currentPage === 'dashboard' ? 'active' : ''}`}
+                        onClick={() => handleNavChange('dashboard')}
+                    >
+                        <Home size={24} />
+                        <span>Inicio</span>
+                    </button>
+
+                    <button
                         className={`dock-item ${currentPage === 'vehiculos' ? 'active' : ''}`}
                         onClick={() => handleNavChange('vehiculos')}
                     >
                         <Car size={24} />
                         <span>Flota</span>
                     </button>
-                    
-                    <button 
+
+                    <button
                         className={`dock-item ${currentPage === 'asignaciones' ? 'active' : ''}`}
                         onClick={() => handleNavChange('asignaciones')}
                     >
@@ -109,7 +123,15 @@ function App() {
                         <span>Asignación</span>
                     </button>
 
-                    <button 
+                    <button
+                        className={`dock-item ${currentPage === 'mantenimientos' ? 'active' : ''}`}
+                        onClick={() => handleNavChange('mantenimientos')}
+                    >
+                        <Wrench size={24} />
+                        <span>Servicio</span>
+                    </button>
+
+                    <button
                         className={`dock-item ${currentPage === 'usuarios' ? 'active' : ''}`}
                         onClick={() => handleNavChange('usuarios')}
                     >

@@ -2,6 +2,160 @@
 
 ## 2024-12-11
 
+### Feature: Módulo Completo de Mantenimientos
+
+#### Backend - Mantenimientos CRUD
+- **feat: added Mantenimiento model to Prisma schema**
+  - Fields: vehiculoId, fecha, tipo, descripcion, taller, costo, kmActual, proximoMantenimiento, observaciones
+  - Cascade delete relationship with Vehiculo
+  - Added taller field for workshop tracking
+
+- **feat: created mantenimientos module with full CRUD**
+  - Service with create, findAll, findByVehiculo, findOne, update, remove methods
+  - Validates kmActual >= vehicle's current km
+  - Automatically updates vehicle's kmActual and kmUltimoMantenimiento after maintenance
+  - Controller with role-based permissions (CREATE/UPDATE: ADMIN, SUPERVISOR, ENCARGADO | DELETE: ADMIN only)
+  - Query param support: GET /mantenimientos?vehiculoId=X
+
+#### Frontend - Mantenimientos UI
+- **feat: complete Mantenimientos module with List and Form**
+  - MantenimientosList: Grid cards (responsive 1/2/3 columns)
+  - Shows: vehiculo, tipo, fecha, kmActual, costo, taller, próximo mantenimiento
+  - Role-based edit/delete buttons
+  - MantenimientoForm: Full form with vehicle selector, date, tipo, km, taller, costo, descripción
+
+- **feat: integrated in main navigation**
+  - Added "Servicio" tab in floating dock (Wrench icon)
+  - Accessible to all authenticated users (create/edit restricted by role)
+
+#### Files Created/Modified
+- Backend: schema.prisma, mantenimientos (service, controller, module, DTOs)
+- Frontend: types, API client, components (List, Form), page, App.tsx navigation
+
+## 2024-12-11
+
+### Feature: Dashboard with Role-Based Metrics & Quick Access
+
+#### Backend - User Assignments Endpoint
+- **feat: added GET /usuarios/:id/asignaciones endpoint**
+  - Returns assignments received (as conductor) and assigned (as encargado)
+  - Includes related vehiculo, usuario/encargado, and fotos data
+  - Ordered by fecha DESC for chronological display
+  - Protected with JwtAuthGuard (authenticated users only)
+
+#### Frontend - Dashboard Implementation
+- **feat: created comprehensive Dashboard/HomePage component**
+  - Replaces previous direct-to-module landing after login
+  - New "Inicio" button (Home icon) in floating dock navigation
+  - Dashboard set as default landing page (currentPage = 'dashboard')
+
+- **feat: role-based dashboard views**
+  - **ADMIN**: Full system metrics (all vehicles, all assignments, all users)
+  - **SUPERVISOR/ENCARGADO**: System-wide metrics (all vehicles, all assignments)
+  - **USUARIO**: Personal metrics only (their vehicles, their assignments)
+
+- **feat: metrics widgets**
+  - Flota/Vehículos: Total, disponibles, en uso
+  - Asignaciones: Total, activas, en revisión
+  - Usuarios: Total registered (ADMIN only)
+  - Mantenimiento: Vehicles needing service (>5000 km)
+  - Alertas: Vehicles with reported damages
+  - Color-coded badges (green=available, yellow=warning, red=danger)
+
+- **feat: quick access cards**
+  - Nueva Asignación → Navigate to AsignacionesPage
+  - Ver Flota → Navigate to VehiculosPage
+  - Usuarios → Navigate to UsuariosPage (ADMIN only)
+  - Interactive with hover effects and gradients
+  - Click navigation via onNavigate prop
+
+- **feat: activity feed**
+  - Recent Assignments (last 5)
+  - Shows estado, fecha, vehiculo, conductor
+  - Damage badges for assignments with tieneDanos flag
+  - Role-aware title: "Mis Asignaciones Recientes" for USUARIO
+
+- **feat: maintenance alerts**
+  - Lists vehicles >5000 km since last maintenance
+  - Shows km overdue or km since service
+  - Current km display
+  - Yellow alert styling with warning icons
+  - Filtered to user's vehicles for USUARIO role
+
+- **feat: personalized welcome messages**
+  - "Panel de Control - Gestión de Flota TAS" (ADMIN)
+  - "Panel de Control - Vista General" (SUPERVISOR/ENCARGADO)
+  - "Mi Panel Personal" (USUARIO)
+
+- **feat: responsive design**
+  - Mobile-first layout
+  - Grid breakpoints at 640px, 1024px
+  - Loading state with animated spinner
+  - Empty states with helpful messages
+
+#### Files Created/Modified
+- Created: `/frontend/flota-tas/src/pages/DashboardPage.tsx`
+- Created: `/frontend/flota-tas/src/pages/DashboardPage.css`
+- Modified: `/frontend/flota-tas/src/App.tsx` - Added dashboard routing and "Inicio" nav
+- Modified: `/backend/src/usuarios/usuarios.service.ts` - Added getAsignaciones()
+- Modified: `/backend/src/usuarios/usuarios.controller.ts` - Added GET :id/asignaciones route
+
+#### Testing & Verification
+- ✅ ADMIN sees all system metrics and all assignments
+- ✅ SUPERVISOR/ENCARGADO sees system metrics (no user count)
+- ✅ USUARIO sees only their personal metrics and assignments
+- ✅ Quick access cards navigate correctly
+- ✅ Maintenance alerts calculated correctly (>5000 km)
+- ✅ Damage badges show for tieneDanos assignments
+- ✅ Responsive layout works on mobile and desktop
+- ✅ Dashboard is default landing page after login
+
+## 2024-12-11
+
+### Feature: Vehicle Availability & Assignment Validations
+
+#### Backend - Validation & Availability Logic
+- **feat: added vehicle availability check in VehiculosService**
+  - Modified `findAll()` to include active assignments (ACTIVA/EN_REVISION states)
+  - Added `disponible` flag to vehicle responses
+  - Added `asignacionActiva` field with assignee and state info
+- **feat: added validation to prevent duplicate assignments**
+  - Added check in AsignacionesService create() method
+  - Blocks new assignments for vehicles with ACTIVA or EN_REVISION state
+  - Returns clear error message with current assignee name
+- **feat: added kilometraje validations**
+  - Made kmSalida required in CreateAsignacionDto
+  - Added validation: kmRetorno must be greater than kmSalida
+  - Clear error messages for validation failures
+
+#### Frontend - UI Updates & Validations
+- **feat: updated VehiculosList to show availability status**
+  - Visual differentiation for available vs. in-use vehicles
+  - Green badge for "Disponible", red badge for "En Uso"
+  - Red gradient background for unavailable vehicles
+  - Shows current assignee and state when vehicle is in use
+  - Added CSS classes: `.badge-disponible`, `.badge-en-uso`, `.no-disponible`
+- **feat: updated AsignacionForm with validations**
+  - Made kmSalida required field (marked with *)
+  - Added client-side validation for kmRetorno > kmSalida
+  - Disabled unavailable vehicles in vehicle selector dropdown
+  - Shows "(En Uso)" label for unavailable vehicles in dropdown
+  - Clear error messages displayed to user on validation failures
+- **fix: updated Vehiculo TypeScript interface**
+  - Added `disponible?: boolean` field
+  - Added `asignacionActiva` field with assignment details
+  - Added `asignaciones` array for backend compatibility
+
+#### Testing & Verification
+- ✅ Vehicles marked as unavailable when ACTIVA or EN_REVISION
+- ✅ Cannot create new assignment for vehicle already in use
+- ✅ kmSalida is required for new assignments
+- ✅ kmRetorno must be greater than kmSalida
+- ✅ Visual feedback in VehiculosList for availability
+- ✅ Dropdown prevents selection of unavailable vehicles
+
+## 2024-12-11
+
 ### Feature: Photo Capture & Gallery for Damage Documentation
 
 #### Frontend - Photo Gallery Component

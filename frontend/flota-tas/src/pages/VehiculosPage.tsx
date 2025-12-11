@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { VehiculosList } from '../components/VehiculosList';
 import { VehiculoForm } from '../components/VehiculoForm';
+import { VehiculoDetail } from '../components/VehiculoDetail';
 import type { Vehiculo } from '../types/vehiculo';
 import './VehiculosPage.css';
 
 export function VehiculosPage() {
-  const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+  const [view, setView] = useState<'list' | 'create' | 'edit' | 'detail'>('list');
   const [selectedVehiculo, setSelectedVehiculo] = useState<Vehiculo | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleCreate = () => {
     setSelectedVehiculo(null);
     setView('create');
+  };
+
+  const handleViewDetail = (vehiculo: Vehiculo) => {
+    setSelectedVehiculo(vehiculo);
+    setView('detail');
   };
 
   const handleEdit = (vehiculo: Vehiculo) => {
@@ -36,7 +42,13 @@ export function VehiculosPage() {
         <VehiculosList
           key={refreshKey}
           onCreate={handleCreate}
+          onEdit={handleViewDetail}
+        />
+      ) : view === 'detail' && selectedVehiculo ? (
+        <VehiculoDetail
+          vehiculoId={selectedVehiculo.id}
           onEdit={handleEdit}
+          onClose={handleCancel}
         />
       ) : (
         <VehiculoForm
