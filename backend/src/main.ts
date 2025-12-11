@@ -14,8 +14,8 @@ async function bootstrap() {
     credentials: true
   });
 
-  // Serve static files
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  // Serve static files (from dist/src, we need to go up two levels to reach backend root)
+  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
     prefix: '/uploads/'
   });
 

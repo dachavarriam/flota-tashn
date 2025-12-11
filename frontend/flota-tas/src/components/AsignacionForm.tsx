@@ -222,9 +222,13 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
 
       // Load existing photos
       if (asignacion.fotos && asignacion.fotos.length > 0) {
+        // Get server base URL without /api suffix
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
+        const serverBase = apiUrl.replace(/\/api\/?$/, ''); // Remove /api or /api/ from end
+
         const existingPhotos = asignacion.fotos.map(foto => ({
           id: foto.id,
-          url: foto.url,
+          url: foto.url.startsWith('http') ? foto.url : `${serverBase}${foto.url}`,
           tipo: foto.tipo
         }));
         setPhotos(existingPhotos);
@@ -611,17 +615,6 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
                     </div>
                  </div>
 
-                 <div className="form-section">
-                     <h3><Camera className="section-icon" /> Fotos</h3>
-                     <div className="photos-grid">
-                         {FOTOS_REQ.map(photo => (
-                             <div key={photo.id} className="photo-slot">
-                                 <div className="photo-placeholder"><Camera size={24} strokeWidth={1.5} /><span>{photo.label}</span></div>
-                                 <button type="button" className="btn-upload" disabled={isReadOnly} style={{opacity: isReadOnly ? 0.5 : 1, cursor: isReadOnly ? 'not-allowed' : 'pointer'}}>Cargar</button>
-                             </div>
-                         ))}
-                     </div>
-                 </div>
              </div>
          </div>
 
@@ -727,8 +720,27 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
           </div>
         )}
 
-        {/* DAMAGE REPORT TOGGLE (for EN_REVISION or FINALIZADA) - At end of form */}
-        {canReportDamage && (
+        {/* PHOTO GALLERY SECTION */}
+        {!isEdit && (
+          // When CREATING new assignment, always show photo gallery for initial vehicle photos
+          <div className="form-section" style={{ marginTop: '1.5rem' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Camera size={24} />
+              Fotos Iniciales del Vehículo
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>
+              Documenta el estado inicial del vehículo antes de entregarlo
+            </p>
+            <PhotoGallery
+              photos={photos}
+              onPhotosChange={setPhotos}
+              readOnly={false}
+            />
+          </div>
+        )}
+
+        {/* DAMAGE REPORT TOGGLE (for EN_REVISION or FINALIZADA) - When editing */}
+        {isEdit && canReportDamage && (
           <div style={{
             padding: '1.5rem',
             textAlign: 'center',
@@ -778,17 +790,17 @@ export function AsignacionForm({ asignacion, currentUser, onSuccess, onCancel, s
           </div>
         )}
 
-        {/* Photo Gallery - Show if damage report is active or if editing existing assignment */}
-        {(allowDamageReport || (isEdit && photos.length > 0)) && (
+        {/* Photo Gallery for DAMAGE REPORT - When editing and damage report is active */}
+        {isEdit && (allowDamageReport || photos.length > 0) && (
           <div className="form-section" style={{ marginTop: '1.5rem' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Camera size={24} />
-              Fotos de Daños
+              {allowDamageReport ? 'Fotos de Daños' : 'Fotos del Vehículo'}
             </h3>
             <PhotoGallery
               photos={photos}
               onPhotosChange={setPhotos}
-              readOnly={isReadOnly}
+              readOnly={!allowDamageReport}
             />
           </div>
         )}

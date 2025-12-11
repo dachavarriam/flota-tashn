@@ -1,6 +1,55 @@
 # Changelog
 
-## 2024-12-10
+## 2024-12-11
+
+### Feature: Photo Capture & Gallery for Damage Documentation
+
+#### Frontend - Photo Gallery Component
+- **feat: created PhotoGallery component for damage documentation**
+  - Implemented photo capture from camera or gallery
+  - Added tipo selector (frontal, trasera, lateral_izq, lateral_der, dano)
+  - Created modern grid layout with photo cards
+  - Added delete functionality for photos
+  - Responsive design for mobile and desktop
+  - Component files: PhotoGallery.tsx and PhotoGallery.css
+  - Modern gradient buttons: blue to dark blue (camera), red to dark red (gallery)
+- **feat: integrated PhotoGallery into AsignacionForm**
+  - Shows when damage report is activated (allowDamageReport flag)
+  - Displays existing photos when editing assignments
+  - Automatically uploads new photos on save
+  - Read-only mode blocks photo editing when not in damage report mode
+  - Removed old unused photo section with non-functional upload slots
+  - Photos open in new tab on click for full-size viewing
+- **fix: photo URL construction and display**
+  - Fixed photo URLs to properly construct server base URL
+  - Removed `/api` suffix correctly using regex replace
+  - Photos now load and display correctly from backend static assets
+
+#### Backend - Photo Upload & Storage
+- **feat: enhanced photo upload endpoint with tipo support**
+  - Modified `/asignaciones/:id/upload-photos` to accept photo tipos
+  - Added automatic database persistence for uploaded photos
+  - Created `addPhotos()` method in AsignacionesService
+  - Added `deletePhoto()` method for individual photo deletion
+  - Added DELETE endpoint `/asignaciones/photos/:photoId`
+  - Enhanced logging for photo operations
+- **fix: static file serving path resolution**
+  - Fixed path in main.ts to use `join(__dirname, '..', '..', 'uploads')`
+  - Correctly resolves from `dist/src/main.js` to backend root `uploads/` folder
+  - Photos now serve correctly with HTTP 200 response
+
+#### Features & Verification
+- ✅ Capture photos from camera or select from gallery
+- ✅ Categorize photos by type (frontal, trasera, laterales, daños)
+- ✅ Upload multiple photos at once
+- ✅ Display photos in modern grid with tipo badges and color coding
+- ✅ Delete individual photos (only when allowDamageReport is active)
+- ✅ Photos persist in database (FotoAsignacion table)
+- ✅ Automatic upload on assignment save
+- ✅ Load existing photos when editing
+- ✅ Photos display correctly with proper URLs
+- ✅ Click to open photos in full size
+- ✅ Read-only mode prevents editing when assignment is ACTIVA
 
 ### Critical Bug Fixes - Asignaciones Form & Estado Flow
 
