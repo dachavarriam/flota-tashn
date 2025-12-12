@@ -72,8 +72,36 @@
 .info-text.bold { font-weight: 700; color: #1e293b; }
 .model-text { font-weight: 400; color: #64748b; font-size: 0.85rem; }
 
-.card-arrow {
+.card-actions-modern {
+    display: flex; align-items: center; gap: 0.5rem;
     position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+}
+
+.action-btn-icon {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+}
+
+.action-btn-icon:hover {
+    background: #e2e8f0;
+    color: #2563eb;
+    transform: scale(1.05);
+}
+
+.action-btn-icon:active {
+    transform: scale(0.95);
+}
+
+.card-arrow {
     color: #cbd5e1;
 }
 

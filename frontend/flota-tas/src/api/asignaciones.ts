@@ -24,5 +24,17 @@ export const asignacionesApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/asignaciones/${id}`);
+  },
+
+  exportPdf: async (id: number): Promise<Blob> => {
+    const { data } = await api.get(`/asignaciones/${id}/pdf`, {
+      responseType: 'blob'
+    });
+    return data;
+  },
+
+  sendToSlack: async (id: number): Promise<{ success: boolean; message: string }> => {
+    const { data } = await api.post(`/asignaciones/${id}/send-slack`);
+    return data;
   }
 };

@@ -1,11 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAsignacionDto } from './dto/create-asignacion.dto';
 import { UpdateAsignacionDto } from './dto/update-asignacion.dto';
+import { PdfService } from './pdf.service';
+import { SlackService } from './slack.service';
 
 @Injectable()
 export class AsignacionesService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(AsignacionesService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private pdfService: PdfService,
+    private slackService: SlackService
+  ) {}
 
   private async generateNumeroRegistro(): Promise<string> {
     // Get the last asignacion with a numeroRegistro
@@ -137,8 +145,11 @@ export class AsignacionesService {
 
     // Generate numeroRegistro if firmaUsuario is being added and doesn't exist yet
     let numeroRegistro = existing.numeroRegistro;
+    let isNewRegistration = false;
+    
     if (data.firmaUsuario && !existing.numeroRegistro) {
       numeroRegistro = await this.generateNumeroRegistro();
+      isNewRegistration = true;
       console.log(`📝 Generated numero registro: ${numeroRegistro} for asignacion #${id}`);
     }
 
@@ -162,7 +173,7 @@ export class AsignacionesService {
       estadoFinal = existing.estado as any;
     }
 
-    return this.prisma.asignacion.update({
+    const updatedAsignacion = await this.prisma.asignacion.update({
       where: { id },
       data: {
         ...data,
@@ -176,6 +187,25 @@ export class AsignacionesService {
         fotos: true,
       },
     });
+
+    // If a new registration number was generated (meaning signatures were added), send notification
+    if (isNewRegistration) {
+      this.handleNewAssignmentNotification(updatedAsignacion).catch(err => 
+        this.logger.error(`Error handling new assignment notification for #${id}`, err)
+      );
+    }
+
+    return updatedAsignacion;
+  }
+
+  private async handleNewAssignmentNotification(asignacion: any) {
+    try {
+      this.logger.log(`🚀 Generating PDF and sending notification for Asignacion #${asignacion.id}`);
+      const pdfBuffer = await this.pdfService.generateAsignacionPdf(asignacion);
+      await this.slackService.sendPdfToSlack(pdfBuffer, asignacion);
+    } catch (error) {
+      this.logger.error('Failed to send assignment notification', error);
+    }
   }
 
   async remove(id: number) {

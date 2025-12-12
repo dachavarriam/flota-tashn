@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { asignacionesApi } from '../api/asignaciones';
 import { EstadoAsignacion } from '../types/asignacion';
 import type { Asignacion } from '../types/asignacion';
-import { Plus, User, Truck, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, User, Truck, ChevronRight, AlertTriangle, FileText } from 'lucide-react';
 import './AsignacionesList.css';
 
 interface AsignacionesListProps {
@@ -41,6 +41,24 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
       if (activeFilter === 'Con Daños') return a.tieneDanos === true;
       return true;
   });
+
+  const handleExportPdf = async (e: React.MouseEvent, id: number, numeroRegistro?: string) => {
+    e.stopPropagation();
+    try {
+      const blob = await asignacionesApi.exportPdf(id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `asignacion_${numeroRegistro || id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error exporting PDF:', err);
+      alert('Error al exportar PDF');
+    }
+  };
 
   const getStatusColor = (estado: EstadoAsignacion) => {
       switch (estado) {
@@ -132,7 +150,7 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
                       <div className="info-row">
                           <Truck size={16} className="info-icon" />
                           <span className="info-text bold">
-                              {asignacion.vehiculo?.placa} 
+                              {asignacion.vehiculo?.placa}
                               <span className="model-text"> • {asignacion.vehiculo?.modelo}</span>
                           </span>
                       </div>
@@ -142,8 +160,17 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
                       </div>
                   </div>
 
-                  <div className="card-arrow">
-                      <ChevronRight size={20} />
+                  <div className="card-actions-modern">
+                      <button
+                          className="action-btn-icon"
+                          onClick={(e) => handleExportPdf(e, asignacion.id, asignacion.numeroRegistro)}
+                          title="Exportar PDF"
+                      >
+                          <FileText size={30} strokeWidth={2} />
+                      </button>
+                      <div className="card-arrow">
+                          <ChevronRight size={20} />
+                      </div>
                   </div>
               </div>
           ))}

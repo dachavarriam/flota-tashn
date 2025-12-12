@@ -2,7 +2,37 @@
 
 ## 2024-12-11
 
+### Feature: PDF Report Generation & Slack Integration
+
+#### Backend - PDF Generation (PdfService)
+- **feat: implemented robust PDF generation service using PDFKit**
+  - **Design:** Professional, single-column layout with corporate branding (TAS colors & logo).
+  - **Content:** Includes vehicle info, trip details, checklist/levels status, damage reports, and driver signature.
+  - **Logic:** implemented "Zebra Striping" for readability and smart page break handling to prevent content overflow.
+  - **Signature:** Robust path resolution to embed driver signature image regardless of server execution context.
+  - **Footer:** Automatic page numbering and generation timestamp on every page.
+  - **Fixes:** Solved multiple layout issues (extra blank pages, misalignment, centering bugs) by switching to absolute positioning logic.
+
+#### Backend - Slack/n8n Integration (SlackService)
+- **feat: automated PDF reporting via n8n webhook**
+  - Configured `SlackService` to send generated PDF files to an n8n webhook endpoint.
+  - Automatic trigger: Sends report immediately upon assignment signature (when `numeroRegistro` is generated).
+  - Data payload: Includes PDF file (multipart/form-data) + metadata (vehicle, driver, date, registry number).
+  - Fallback: Graceful error handling if webhook is not configured.
+
+#### Frontend - Asignaciones UI
+- **fix: removed manual "Send to Slack" button** as the process is now fully automated.
+- **feat: improved "Export PDF" button visibility** by increasing icon size.
+
+#### Files Created/Modified
+- `backend/src/asignaciones/pdf.service.ts`: Complete rewrite for professional layout.
+- `backend/src/asignaciones/slack.service.ts`: Fixed type errors and improved error handling.
+- `backend/src/asignaciones/asignaciones.service.ts`: Added auto-trigger logic for PDF generation on update.
+- `frontend/flota-tas/src/components/AsignacionesList.tsx`: UI cleanup.
+- `backend/assets/logo.png`: Added corporate logo asset.
+
 ### Feature: Módulo Completo de Mantenimientos
+...
 
 #### Backend - Mantenimientos CRUD
 - **feat: added Mantenimiento model to Prisma schema**
