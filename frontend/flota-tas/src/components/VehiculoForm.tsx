@@ -119,7 +119,7 @@ export function VehiculoForm({ vehiculo, onSuccess, onCancel }: VehiculoFormProp
               type="text"
               value={formData.modelo}
               onChange={(e) => handleChange('modelo', e.target.value)}
-              placeholder="Hilux 2023"
+              placeholder="Ranger 2023"
             />
           </div>
         </div>
@@ -137,6 +137,7 @@ export function VehiculoForm({ vehiculo, onSuccess, onCancel }: VehiculoFormProp
             <option value="Camion">Camion</option>
             <option value="SUV">SUV</option>
             <option value="Sedan">Sedan</option>
+            <option value="Motocicleta">Motocicleta</option>
           </select>
         </div>
 

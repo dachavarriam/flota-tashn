@@ -152,7 +152,7 @@ function App() {
       <div className="card">
         <div className="brand">
           <div className="logo-wrapper"><img src={logoTas} alt="TAS" className="logo-img" /></div>
-          <div><p className="eyebrow">Demo flota</p><h1>Sistema de asignación</h1></div>
+          <div><p className="eyebrow">Flota TAS SA DE CV</p><h1>Sistema de asignación</h1></div>
         </div>
         <form className="form" onSubmit={handleSubmit}>
           <label>Correo<input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required /></label>

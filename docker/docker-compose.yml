@@ -1,50 +1,33 @@
 services:
-  api:
-    container_name: flota-api
+  # 1. Backend (NestJS)
+  backend:
     build: ../backend
     restart: always
-    ports:
-      - "4000:4000"
     environment:
-      NODE_ENV: production
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/flota
-      REDIS_URL: redis://redis:6379
-      PORT: 4000
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
-    container_name: flota-postgres
-    image: postgres:16
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: flota
-    ports:
-      - "5433:5432"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: postgresql://dchavarriam:HHumb3rto.2021@192.168.0.107:5432/flota?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
     volumes:
-      - flota_pg_data:/var/lib/postgresql/data
+      # Persistencia para fotos y firmas
+      - ../backend/uploads:/app/uploads
+    networks:
+      - flota-network
 
-  pgadmin:
-    container_name: flota-pgadmin
-    image: dpage/pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@tas.hn
-      PGADMIN_DEFAULT_PASSWORD: admin123
+  # 2. Frontend (React + Nginx)
+  frontend:
+    build: ../frontend/flota-tas
+    restart: unless-stopped
     ports:
-      - "5050:80"
+      - "3005:80"
     depends_on:
-      - postgres
+      - backend
+    networks:
+      - flota-network
 
-  redis:
-    image: redis:7
-    container_name: flota-redis
-    restart: always
-    ports:
-      - "6379:6379"
-
-volumes:
-  flota_pg_data:
+networks:
+  flota-network:
