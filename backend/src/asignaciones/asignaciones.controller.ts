@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Res, Request } from '@nestjs/common';
 import { Response } from 'express';
 import { AsignacionesService } from './asignaciones.service';
 import { PdfService } from './pdf.service';
@@ -21,8 +21,9 @@ export class AsignacionesController {
 
   @Post()
   @Roles(Rol.ADMIN, Rol.SUPERVISOR, Rol.ENCARGADO)
-  create(@Body() createAsignacionDto: CreateAsignacionDto) {
-    return this.asignacionesService.create(createAsignacionDto);
+  create(@Body() createAsignacionDto: CreateAsignacionDto, @Request() req: any) {
+    // Updated for user injection
+    return this.asignacionesService.create(createAsignacionDto, req.user);
   }
 
   @Get()

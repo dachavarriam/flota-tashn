@@ -36,7 +36,7 @@ export class AsignacionesService {
     return `TFL-${nextNumber.toString().padStart(4, '0')}`;
   }
 
-  async create(createAsignacionDto: CreateAsignacionDto) {
+  async create(createAsignacionDto: CreateAsignacionDto, currentUser: any) {
     const { vehiculoId, usuarioId, encargadoId, fotos, ...data } = createAsignacionDto;
 
     // Verify existence of related entities
@@ -66,6 +66,21 @@ export class AsignacionesService {
       throw new BadRequestException(
         `El vehículo ${vehiculo.placa} ya está asignado a ${activeAssignment.usuario.nombre} (Estado: ${activeAssignment.estado})`
       );
+    }
+
+    // Validate KM Sequence
+    // Required: kmSalida >= vehiculo.kmActual
+    // Exception: ADMIN or SUPERUSER can override
+    if (data.kmSalida !== undefined && data.kmSalida < vehiculo.kmActual) {
+      const isOverrideAllowed = currentUser.rol === 'ADMIN' || currentUser.rol === 'SUPERUSER';
+      
+      if (!isOverrideAllowed) {
+        throw new BadRequestException(
+          `El kilometraje de salida (${data.kmSalida}) no puede ser menor al actual del vehículo (${vehiculo.kmActual}). Solo un Administrador puede corregir esto.`
+        );
+      } else {
+        this.logger.warn(`⚠️ ADMIN Override: Asignacion creada con kmSalida (${data.kmSalida}) < kmActual (${vehiculo.kmActual}) por ${currentUser.nombre}`);
+      }
     }
 
     // Note: numeroRegistro is generated when signature is uploaded (in update method)
@@ -187,6 +202,15 @@ export class AsignacionesService {
         fotos: true,
       },
     });
+
+    // Update Vehicle KM if kmRetorno was set
+    if (data.kmRetorno && data.kmRetorno > (existing.vehiculo?.kmActual || 0)) {
+       await this.prisma.vehiculo.update({
+         where: { id: existing.vehiculoId },
+         data: { kmActual: data.kmRetorno }
+       });
+       this.logger.log(`🚗 Updated Vehicle #${existing.vehiculoId} kmActual to ${data.kmRetorno}`);
+    }
 
     // If a new registration number was generated (meaning signatures were added), send notification
     if (isNewRegistration) {

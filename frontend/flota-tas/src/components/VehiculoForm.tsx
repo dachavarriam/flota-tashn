@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { vehiculosApi } from '../api/vehiculos';
 import type { Vehiculo, CreateVehiculoDto, UpdateVehiculoDto } from '../types/vehiculo';
 import './VehiculoForm.css';
@@ -43,19 +43,26 @@ export function VehiculoForm({ vehiculo, onSuccess, onCancel }: VehiculoFormProp
     setLoading(true);
 
     try {
-      const data: CreateVehiculoDto | UpdateVehiculoDto = {
-        placa: formData.placa,
-        marca: formData.marca || undefined,
-        modelo: formData.modelo || undefined,
-        tipo: formData.tipo || undefined,
-        kmActual: parseInt(formData.kmActual) || 0,
-        kmUltimoMantenimiento: parseInt(formData.kmUltimoMantenimiento) || 0
-      };
-
       if (isEdit && vehiculo) {
-        await vehiculosApi.update(vehiculo.id, data);
+        const updateData: UpdateVehiculoDto = {
+          placa: formData.placa || undefined,
+          marca: formData.marca || undefined,
+          modelo: formData.modelo || undefined,
+          tipo: formData.tipo || undefined,
+          kmActual: parseInt(formData.kmActual) || undefined,
+          kmUltimoMantenimiento: parseInt(formData.kmUltimoMantenimiento) || undefined
+        };
+        await vehiculosApi.update(vehiculo.id, updateData);
       } else {
-        await vehiculosApi.create(data);
+        const createData: CreateVehiculoDto = {
+          placa: formData.placa,
+          marca: formData.marca || undefined,
+          modelo: formData.modelo || undefined,
+          tipo: formData.tipo || undefined,
+          kmActual: parseInt(formData.kmActual) || 0,
+          kmUltimoMantenimiento: parseInt(formData.kmUltimoMantenimiento) || 0
+        };
+        await vehiculosApi.create(createData);
       }
 
       onSuccess?.();

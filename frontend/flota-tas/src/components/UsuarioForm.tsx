@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { usuariosApi } from '../api/usuarios';
 import { Rol } from '../types/usuario';
 import type { Usuario, CreateUsuarioDto, UpdateUsuarioDto } from '../types/usuario';

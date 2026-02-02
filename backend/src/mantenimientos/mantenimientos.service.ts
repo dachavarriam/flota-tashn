@@ -5,6 +5,7 @@ import { UpdateMantenimientoDto } from './dto/update-mantenimiento.dto';
 
 @Injectable()
 export class MantenimientosService {
+  // Mantenimientos Service Methods
   constructor(private prisma: PrismaService) {}
 
   async create(createMantenimientoDto: CreateMantenimientoDto) {

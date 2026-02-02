@@ -1,6 +1,12 @@
 import { api } from './client';
 import type { Usuario, CreateUsuarioDto, UpdateUsuarioDto } from '../types/usuario';
 
+// TODO: Mover esta interfaz a un archivo de tipos compartido (ej. ../types/asignacion.ts)
+export interface Asignacion {
+  id: number;
+  [key: string]: unknown; // Permite propiedades adicionales de forma segura hasta definir el tipo completo
+}
+
 export const usuariosApi = {
   getAll: async (): Promise<Usuario[]> => {
     const { data } = await api.get<Usuario[]>('/usuarios');
@@ -27,7 +33,7 @@ export const usuariosApi = {
     return data;
   },
 
-  getAsignaciones: async (id: number): Promise<{recibidas: any[], asignadas: any[]}> => {
+  getAsignaciones: async (id: number): Promise<{recibidas: Asignacion[], asignadas: Asignacion[]}> => {
     const { data } = await api.get(`/usuarios/${id}/asignaciones`);
     return data;
   }

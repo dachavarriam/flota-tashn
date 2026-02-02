@@ -11,15 +11,15 @@ import type { DockAction } from '../App';
 import SignatureCanvas from 'react-signature-canvas';
 import { PhotoGallery } from './PhotoGallery';
 import './AsignacionForm.css';
-import { 
-  Car, 
-  Fuel, 
-  Lightbulb, 
-  Disc, 
-  Circle, 
-  Eye, 
-  Droplet, 
-  Thermometer, 
+import {
+  Car,
+  Fuel,
+  Lightbulb,
+  Disc,
+  Circle,
+  Eye,
+  Droplet,
+  Thermometer,
   Activity,
   CheckCircle2,
   AlertTriangle,

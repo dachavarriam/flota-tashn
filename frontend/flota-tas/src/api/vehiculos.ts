@@ -3,23 +3,28 @@ import type { Vehiculo, CreateVehiculoDto, UpdateVehiculoDto } from '../types/ve
 
 export const vehiculosApi = {
   getAll: async (): Promise<Vehiculo[]> => {
-    const response = await api.get<Vehiculo[]>('/vehiculos');
-    return response.data;
+    const { data } = await api.get<Vehiculo[]>('/vehiculos');
+    return data;
   },
 
   getOne: async (id: number): Promise<Vehiculo> => {
-    const response = await api.get<Vehiculo>(`/vehiculos/${id}`);
-    return response.data;
+    const { data } = await api.get<Vehiculo>(`/vehiculos/${id}`);
+    return data;
   },
 
-  create: async (data: CreateVehiculoDto): Promise<Vehiculo> => {
-    const response = await api.post<Vehiculo>('/vehiculos', data);
-    return response.data;
+  getHistorial: async (id: number): Promise<any[]> => {
+    const { data } = await api.get<any[]>(`/vehiculos/${id}/historial`);
+    return data;
   },
 
-  update: async (id: number, data: UpdateVehiculoDto): Promise<Vehiculo> => {
-    const response = await api.patch<Vehiculo>(`/vehiculos/${id}`, data);
-    return response.data;
+  create: async (payload: CreateVehiculoDto): Promise<Vehiculo> => {
+    const { data } = await api.post<Vehiculo>('/vehiculos', payload);
+    return data;
+  },
+
+  update: async (id: number, payload: UpdateVehiculoDto): Promise<Vehiculo> => {
+    const { data } = await api.patch<Vehiculo>(`/vehiculos/${id}`, payload);
+    return data;
   },
 
   delete: async (id: number): Promise<void> => {

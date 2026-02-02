@@ -9,9 +9,12 @@ export const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const stored = localStorage.getItem('flota-auth');
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    if (parsed.token) {
+      config.headers.Authorization = `Bearer ${parsed.token}`;
+    }
   }
   return config;
 });

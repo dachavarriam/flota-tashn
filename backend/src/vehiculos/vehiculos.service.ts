@@ -160,4 +160,38 @@ export class VehiculosService {
       id
     };
   }
+
+  async getHistorial(id: number) {
+    await this.findOne(id); // Verify existence
+
+    const [asignaciones, mantenimientos] = await Promise.all([
+      this.prisma.asignacion.findMany({
+        where: { vehiculoId: id },
+        include: {
+          usuario: { select: { nombre: true } },
+          encargado: { select: { nombre: true } }
+        },
+        orderBy: { fecha: 'desc' }
+      }),
+      this.prisma.mantenimiento.findMany({
+        where: { vehiculoId: id },
+        orderBy: { fecha: 'desc' }
+      })
+    ]);
+
+    const historial = [
+      ...asignaciones.map(a => ({
+        type: 'ASIGNACION',
+        fecha: a.fecha,
+        data: a
+      })),
+      ...mantenimientos.map(m => ({
+        type: 'MANTENIMIENTO',
+        fecha: m.fecha,
+        data: m
+      }))
+    ];
+
+    return historial.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+  }
 }

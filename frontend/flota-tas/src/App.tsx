@@ -8,7 +8,7 @@ import { VehiculosPage } from './pages/VehiculosPage';
 import { UsuariosPage } from './pages/UsuariosPage';
 import { AsignacionesPage } from './pages/AsignacionesPage';
 import { MantenimientosPage } from './pages/MantenimientosPage';
-import { Car, ClipboardCheck, User, LogOut, Check, X, Home, Wrench } from 'lucide-react';
+import { Car, ClipboardCheck, User, LogOut, Home, Wrench } from 'lucide-react';
 
 // Tipos para acciones del Dock
 export interface DockAction {

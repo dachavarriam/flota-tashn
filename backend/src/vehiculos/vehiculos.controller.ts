@@ -40,6 +40,12 @@ export class VehiculosController {
     return this.vehiculosService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/historial')
+  getHistorial(@Param('id', ParseIntPipe) id: number) {
+    return this.vehiculosService.getHistorial(id);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Rol.ADMIN, Rol.SUPERVISOR)
   @Patch(':id')

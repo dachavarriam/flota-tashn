@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { vehiculosApi } from '../api/vehiculos';
 import type { Vehiculo } from '../types/vehiculo';
-import { Car, Calendar, Gauge, Wrench, History, Edit2, X } from 'lucide-react';
+import { Car, Calendar, Gauge, Wrench, History, Edit2, X, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { VehiculoHistory } from './VehiculoHistory';
 import './VehiculoDetail.css';
 
 interface VehiculoDetailProps {
@@ -16,6 +17,7 @@ export function VehiculoDetail({ vehiculoId, onEdit, onClose }: VehiculoDetailPr
   const [vehiculo, setVehiculo] = useState<Vehiculo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Check if user can edit (SUPERVISOR, ADMIN, or ENCARGADO)
   const canEdit = user?.rol && ['SUPERVISOR', 'ADMIN', 'ENCARGADO'].includes(user.rol);
@@ -73,6 +75,21 @@ export function VehiculoDetail({ vehiculoId, onEdit, onClose }: VehiculoDetailPr
           )}
         </div>
         <div className="detail-header-actions">
+          <button
+            onClick={() => setShowHistory(true)}
+            className="btn-history-detail"
+            title="Ver Historial Completo"
+            style={{
+              background: '#e0f2fe', color: '#0284c7', border: 'none', 
+              padding: '0.5rem 1rem', borderRadius: '8px', 
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem'
+            }}
+          >
+            <FileText size={18} />
+            Historial
+          </button>
+
           {canEdit && (
             <button
               onClick={() => onEdit?.(vehiculo)}
@@ -189,12 +206,12 @@ export function VehiculoDetail({ vehiculoId, onEdit, onClose }: VehiculoDetailPr
         )}
       </div>
 
-      {/* Historial de Asignaciones */}
+      {/* Historial de Asignaciones (Preview) */}
       {vehiculo.asignaciones && vehiculo.asignaciones.length > 0 && (
         <div className="detail-card detail-history">
           <h3 className="detail-card-title">
             <Calendar size={20} />
-            Historial de Asignaciones (Últimas 5)
+            Asignaciones Recientes
           </h3>
           <div className="history-list">
             {vehiculo.asignaciones.map((asignacion: any) => (
@@ -218,6 +235,14 @@ export function VehiculoDetail({ vehiculoId, onEdit, onClose }: VehiculoDetailPr
             ))}
           </div>
         </div>
+      )}
+
+      {/* Full History Modal */}
+      {showHistory && (
+        <VehiculoHistory 
+          vehiculoId={vehiculoId} 
+          onClose={() => setShowHistory(false)} 
+        />
       )}
     </div>
   );

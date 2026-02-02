@@ -57,3 +57,7 @@ postgres-data/
 
 # TypeScript
 *.tsbuildinfo
+
+backend/uploads/photos/*
+backend/uploads/signatures/*
+!backend/uploads/.gitkeep
