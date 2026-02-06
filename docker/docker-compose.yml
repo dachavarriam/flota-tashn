@@ -11,6 +11,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Persistencia para fotos y firmas
       - ../backend/uploads:/app/uploads

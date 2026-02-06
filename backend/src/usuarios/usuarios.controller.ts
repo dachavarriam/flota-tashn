@@ -36,8 +36,9 @@ export class UsuariosController {
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Req() req: any) {
-    if (req.user.rol !== Rol.ADMIN) {
-      throw new ForbiddenException('Solo Administradores pueden gestionar usuarios');
+    const user = req.user;
+    if (![Rol.ADMIN, Rol.SUPERVISOR, Rol.ENCARGADO].includes(user.rol)) {
+      throw new ForbiddenException('No tienes permiso para ver la lista de usuarios');
     }
     return this.usuariosService.findAll();
   }

@@ -10,7 +10,11 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: true, // Allow all origins in development
+    origin: [
+      'https://flota.tashonduras.com',
+      'http://100.121.227.68:3005', // Tu IP de Tailscale para pruebas
+      'http://localhost:3005'
+    ],
     credentials: true
   });
 

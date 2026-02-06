@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+// Use relative path '/api' by default so requests go to the same origin (Nginx)
+const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = axios.create({
   baseURL,
