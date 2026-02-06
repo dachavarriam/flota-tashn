@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Res, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, Res, Request, Req, ForbiddenException } from '@nestjs/common';
 import { Response } from 'express';
 import { AsignacionesService } from './asignaciones.service';
 import { PdfService } from './pdf.service';
@@ -20,15 +20,16 @@ export class AsignacionesController {
   ) {}
 
   @Post()
-  @Roles(Rol.ADMIN, Rol.SUPERVISOR, Rol.ENCARGADO)
+  @Roles(Rol.ADMIN, Rol.ENCARGADO)
   create(@Body() createAsignacionDto: CreateAsignacionDto, @Request() req: any) {
     // Updated for user injection
     return this.asignacionesService.create(createAsignacionDto, req.user);
   }
 
   @Get()
-  findAll() {
-    return this.asignacionesService.findAll();
+  findAll(@Request() req: any) {
+    const usuario = req.user; 
+    return this.asignacionesService.findAll(usuario);
   }
 
   @Get(':id')
@@ -37,7 +38,7 @@ export class AsignacionesController {
   }
 
   @Patch(':id')
-  @Roles(Rol.ADMIN, Rol.SUPERVISOR, Rol.ENCARGADO)
+  @Roles(Rol.ADMIN, Rol.ENCARGADO)
   update(@Param('id', ParseIntPipe) id: number, @Body() updateAsignacionDto: UpdateAsignacionDto) {
     return this.asignacionesService.update(id, updateAsignacionDto);
   }

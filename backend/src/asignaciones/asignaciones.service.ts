@@ -111,7 +111,8 @@ export class AsignacionesService {
     });
   }
 
-  async findAll() {
+  async findAll(usuario: any) {
+    if (['ADMIN', 'ENCARGADO', 'SUPERVISOR'].includes(usuario.rol)) {
     return this.prisma.asignacion.findMany({
       include: {
         vehiculo: true,
@@ -123,6 +124,21 @@ export class AsignacionesService {
         fecha: 'desc',
       },
     });
+  }
+  return this.prisma.asignacion.findMany({
+    where: {
+      usuarioId: usuario.id,
+    },
+    include: {
+      vehiculo: true,
+      usuario: true,
+      encargado: true,
+      fotos: true,
+    },
+    orderBy: {
+      fecha: 'desc',
+    },
+  });
   }
 
   async findOne(id: number) {

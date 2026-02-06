@@ -7,7 +7,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  UseGuards
+  UseGuards,
+  Req,
+  ForbiddenException
 } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -24,13 +26,19 @@ export class UsuariosController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Rol.ADMIN)
   @Post()
-  create(@Body() dto: CreateUsuarioDto) {
+  create(@Body() dto: CreateUsuarioDto, @Req() req: any) {
+    if (req.user.rol !== Rol.ADMIN) {
+      throw new ForbiddenException('Acceso Denegado');
+    } 
     return this.usuariosService.create(dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
+  findAll(@Req() req: any) {
+    if (req.user.rol !== Rol.ADMIN) {
+      throw new ForbiddenException('Solo Administradores pueden gestionar usuarios');
+    }
     return this.usuariosService.findAll();
   }
 

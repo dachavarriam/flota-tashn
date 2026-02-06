@@ -7,7 +7,9 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  UseGuards
+  UseGuards,
+  Req,
+  ForbiddenException
 } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -30,7 +32,11 @@ export class VehiculosController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
+  findAll(@Req() req: any) {
+    const user = req.user;
+    if (user.rol === Rol.USUARIO) {
+      throw new ForbiddenException('No tienes permiso para ver los vehículos');
+    }
     return this.vehiculosService.findAll();
   }
 
