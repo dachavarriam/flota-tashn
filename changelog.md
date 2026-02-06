@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-02-06
+
+### Fix: Permisos de Rol ENCARGADO y Configuración de Producción
+- **fix: corregido error de permisos para el rol ENCARGADO**
+  - Se habilitó el acceso al endpoint `GET /api/usuarios` para los roles `ENCARGADO` y `SUPERVISOR`.
+  - Esto soluciona el problema donde los dropdowns de conductores y vehículos no cargaban en el formulario de asignaciones.
+  - Permite que el flujo de creación de asignaciones y carga de fotos funcione correctamente para encargados.
+- **chore: actualización de configuraciones para producción**
+  - Se actualizó el `main.ts` del backend para permitir CORS desde `https://flota.tashonduras.com`.
+  - Se cambió el `baseURL` del frontend a una ruta relativa (`/api`) para compatibilidad con Nginx en producción.
+  - Se eliminaron credenciales de base de datos hardcodeadas en `docker-compose.yml` para mejorar la seguridad.
+  - Se añadió `host.docker.internal` al `extra_hosts` del backend para facilitar la conexión con servicios locales si es necesario.
+
+## 2026-02-05
+
+### Feature: Restricciones de Roles y Mejoras en Gestión
+- **feat: implementar restricciones de roles adicionales**
+  - Refuerzo de seguridad en controladores para asegurar que solo ADMIN/SUPERVISOR puedan realizar acciones críticas.
+- **feat: limpieza de asignaciones y mejoras en vehículos**
+  - Optimización de la lógica de limpieza de datos.
+  - Mejoras en la visualización y gestión de la flota en el frontend.
+- **chore: limpieza del repositorio**
+  - Eliminación de scripts de mantenimiento obsoletos (`backend/limpiar-db.ts`).
+
+## 2026-02-02
+
+### Infrastructure: Migración a Docker Compose y Despliegue en Producción
+- **feat: implementación de Docker Compose para despliegue completo**
+  - Orquestación de contenedores para backend (NestJS) y frontend (Vite/Nginx).
+  - Configuración de persistencia de datos para fotos y firmas mediante volúmenes.
+- **fix: compatibilidad con Debian Slim**
+  - Ajustes en el entorno del backend para resolver errores de ejecución (Err 139) en servidores Debian.
+- **chore: despliegue exitoso**
+  - Aplicación funcional y corriendo en `https://flota.tashonduras.com`.
+
 ## 2024-12-11
 
 ### Feature: PDF Report Generation & Slack Integration
