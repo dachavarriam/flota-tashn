@@ -1,11 +1,6 @@
 import { api } from './client';
 import type { Usuario, CreateUsuarioDto, UpdateUsuarioDto } from '../types/usuario';
-
-// TODO: Mover esta interfaz a un archivo de tipos compartido (ej. ../types/asignacion.ts)
-export interface Asignacion {
-  id: number;
-  [key: string]: unknown; // Permite propiedades adicionales de forma segura hasta definir el tipo completo
-}
+import type { Asignacion } from '../types/asignacion';
 
 export const usuariosApi = {
   getAll: async (): Promise<Usuario[]> => {

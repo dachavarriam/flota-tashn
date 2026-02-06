@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { asignacionesApi } from '../api/asignaciones';
+import { usuariosApi } from '../api/usuarios';
 import { EstadoAsignacion } from '../types/asignacion';
+import { useAuth } from '../context/AuthContext';
+import { Rol } from '../types/usuario';
 import type { Asignacion } from '../types/asignacion';
 import { Plus, User, Truck, ChevronRight, AlertTriangle, FileText } from 'lucide-react';
 import './AsignacionesList.css';
@@ -13,19 +16,27 @@ interface AsignacionesListProps {
 const FILTERS = ['Todas', 'Activas', 'En Revisión', 'Finalizadas', 'Con Daños'];
 
 export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
+  const { user } = useAuth();
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('Todas');
 
   useEffect(() => {
     loadAsignaciones();
-  }, []);
+  }, [user]); // Reload if user changes
 
   const loadAsignaciones = async () => {
     try {
       setLoading(true);
-      const data = await asignacionesApi.getAll();
-      setAsignaciones(data);
+      if (user?.rol === Rol.USUARIO && user.id) {
+          // Si es USUARIO, solo cargar sus asignaciones recibidas (conductor)
+          const { recibidas } = await usuariosApi.getAsignaciones(user.id);
+          setAsignaciones(recibidas);
+      } else {
+          // Si es ADMIN/ENCARGADO/SUPERVISOR, cargar todas
+          const data = await asignacionesApi.getAll();
+          setAsignaciones(data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -77,7 +88,7 @@ export function AsignacionesList({ onEdit, onCreate }: AsignacionesListProps) {
       {/* Header */}
       <div className="list-header-modern">
           <h2 className="page-title">Asignaciones</h2>
-          {onCreate && (
+          {onCreate && user?.rol !== Rol.USUARIO && (
               <button className="btn-add-modern" onClick={onCreate}>
                   <Plus size={24} />
               </button>

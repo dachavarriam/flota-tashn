@@ -265,6 +265,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+.dashboard-card.full-width {
+  grid-column: 1 / -1;
+}
+
 .dashboard-card.alert-card {
   border-left: 4px solid #f59e0b;
 }

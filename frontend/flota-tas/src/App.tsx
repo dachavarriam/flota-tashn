@@ -9,6 +9,7 @@ import { UsuariosPage } from './pages/UsuariosPage';
 import { AsignacionesPage } from './pages/AsignacionesPage';
 import { MantenimientosPage } from './pages/MantenimientosPage';
 import { Car, ClipboardCheck, User, LogOut, Home, Wrench } from 'lucide-react';
+import { Rol } from './types/usuario';
 
 // Tipos para acciones del Dock
 export interface DockAction {
@@ -69,7 +70,7 @@ function App() {
           {currentPage === 'dashboard' && (
             <DashboardPage onNavigate={(page) => setCurrentPage(page)} />
           )}
-          {currentPage === 'vehiculos' && <VehiculosPage />}
+          {currentPage === 'vehiculos' && user.rol !== Rol.USUARIO && <VehiculosPage />}
 
           {/* Pasamos setDockActions a AsignacionesPage para que controle el dock */}
           {currentPage === 'asignaciones' && (
@@ -77,7 +78,7 @@ function App() {
           )}
 
           {currentPage === 'usuarios' && <UsuariosPage />}
-          {currentPage === 'mantenimientos' && <MantenimientosPage />}
+          {currentPage === 'mantenimientos' && user.rol !== Rol.USUARIO && <MantenimientosPage />}
         </main>
 
         {/* FLOATING DOCK DINÁMICO */}
@@ -107,13 +108,15 @@ function App() {
                         <span>Inicio</span>
                     </button>
 
-                    <button
-                        className={`dock-item ${currentPage === 'vehiculos' ? 'active' : ''}`}
-                        onClick={() => handleNavChange('vehiculos')}
-                    >
-                        <Car size={24} />
-                        <span>Flota</span>
-                    </button>
+                    {user.rol !== Rol.USUARIO && (
+                        <button
+                            className={`dock-item ${currentPage === 'vehiculos' ? 'active' : ''}`}
+                            onClick={() => handleNavChange('vehiculos')}
+                        >
+                            <Car size={24} />
+                            <span>Flota</span>
+                        </button>
+                    )}
 
                     <button
                         className={`dock-item ${currentPage === 'asignaciones' ? 'active' : ''}`}
@@ -123,13 +126,15 @@ function App() {
                         <span>Asignación</span>
                     </button>
 
-                    <button
-                        className={`dock-item ${currentPage === 'mantenimientos' ? 'active' : ''}`}
-                        onClick={() => handleNavChange('mantenimientos')}
-                    >
-                        <Wrench size={24} />
-                        <span>Servicio</span>
-                    </button>
+                    {user.rol !== Rol.USUARIO && (
+                        <button
+                            className={`dock-item ${currentPage === 'mantenimientos' ? 'active' : ''}`}
+                            onClick={() => handleNavChange('mantenimientos')}
+                        >
+                            <Wrench size={24} />
+                            <span>Servicio</span>
+                        </button>
+                    )}
 
                     <button
                         className={`dock-item ${currentPage === 'usuarios' ? 'active' : ''}`}

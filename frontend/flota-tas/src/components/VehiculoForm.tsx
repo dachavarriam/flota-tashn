@@ -167,15 +167,45 @@ export function VehiculoForm({ vehiculo, onSuccess, onCancel }: VehiculoFormProp
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <div className="form-actions">
-          {onCancel && (
-            <button type="button" className="btn-secondary" onClick={onCancel}>
-              Cancelar
+        <div className="form-actions" style={{ justifyContent: 'space-between' }}>
+          {/* Left side actions (Delete) */}
+          <div>
+            {isEdit && vehiculo && (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={async () => {
+                  if (window.confirm('¿Estás seguro de eliminar este vehículo? Esta acción no se puede deshacer.')) {
+                    setLoading(true);
+                    try {
+                      await vehiculosApi.delete(vehiculo.id);
+                      onSuccess?.();
+                    } catch (err: any) {
+                       const msg = err.response?.data?.message || 'Error al eliminar vehículo';
+                       setError(msg);
+                       setLoading(false);
+                    }
+                  }
+                }}
+                disabled={loading}
+                style={{ backgroundColor: '#ef4444', color: 'white', border: 'none' }}
+              >
+                Eliminar
+              </button>
+            )}
+          </div>
+
+          {/* Right side actions (Cancel / Save) */}
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {onCancel && (
+              <button type="button" className="btn-secondary" onClick={onCancel}>
+                Cancelar
+              </button>
+            )}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
             </button>
-          )}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
-          </button>
+          </div>
         </div>
       </form>
     </div>

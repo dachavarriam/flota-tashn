@@ -5,7 +5,6 @@ import { asignacionesApi } from '../api/asignaciones';
 import { usuariosApi } from '../api/usuarios';
 import type { Vehiculo } from '../types/vehiculo';
 import type { Asignacion } from '../types/asignacion';
-import type { Usuario } from '../types/usuario';
 import {
   Car,
   ClipboardCheck,
@@ -14,7 +13,6 @@ import {
   Wrench,
   Activity,
   Calendar,
-  TrendingUp,
   Plus
 } from 'lucide-react';
 import './DashboardPage.css';
@@ -193,6 +191,64 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const isSupervisorOrEncargado = user?.rol && ['SUPERVISOR', 'ENCARGADO'].includes(user.rol);
   const isRegularUser = !isAdmin && !isSupervisorOrEncargado;
 
+  // USUARIO Role view: Only show Recent Assignments
+  if (isRegularUser) {
+    return (
+      <div className="dashboard-page">
+        {/* Welcome Section */}
+        <div className="dashboard-welcome">
+          <div>
+            <h1>Bienvenido, {user?.nombre}</h1>
+            <p className="welcome-subtitle">Mi Panel Personal</p>
+          </div>
+        </div>
+
+        <div className="dashboard-columns">
+          {/* Recent Assignments Only */}
+          <div className="dashboard-card full-width">
+            <h2 className="card-title">
+              <Activity size={20} />
+              Mis Asignaciones Recientes
+            </h2>
+            {recentAsignaciones.length === 0 ? (
+              <div className="empty-state">
+                <Calendar size={32} />
+                <p>No tienes asignaciones registradas</p>
+              </div>
+            ) : (
+              <div className="recent-list">
+                {recentAsignaciones.map(asig => (
+                  <div key={asig.id} className="recent-item">
+                    <div className="recent-header">
+                      <span className={`recent-badge ${asig.estado.toLowerCase()}`}>
+                        {asig.estado}
+                      </span>
+                      <span className="recent-date">{formatDate(asig.fecha)}</span>
+                    </div>
+                    <div className="recent-body">
+                      <p className="recent-vehicle">
+                        {asig.vehiculo?.placa} - {asig.vehiculo?.modelo}
+                      </p>
+                      <p className="recent-detail">
+                        Conductor: {asig.usuario?.nombre}
+                      </p>
+                      {asig.tieneDanos && (
+                        <span className="damage-badge">
+                          <AlertTriangle size={14} />
+                          Con daños
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-page">
       {/* Welcome Section */}
@@ -359,10 +415,10 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
                   </div>
                   <div className="recent-body">
                     <p className="recent-vehicle">
-                      {asig.vehiculo.placa} - {asig.vehiculo.modelo}
+                      {asig.vehiculo?.placa} - {asig.vehiculo?.modelo}
                     </p>
                     <p className="recent-detail">
-                      Conductor: {asig.usuario.nombre}
+                      Conductor: {asig.usuario?.nombre}
                     </p>
                     {asig.tieneDanos && (
                       <span className="damage-badge">
